@@ -63,12 +63,14 @@ public class ReceiveManager extends Thread {
             }
         };
 
-        try {
-            socket = serverSocket.accept();
-            DataReceiveThread2 thread = new DataReceiveThread2(managerHandler, receiveActivityHandler, socket);
-            thread.start();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(serverSocket != null) {
+            try {
+                socket = serverSocket.accept();
+                DataReceiveThread2 thread = new DataReceiveThread2(managerHandler, receiveActivityHandler, socket);
+                thread.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         Looper.loop();

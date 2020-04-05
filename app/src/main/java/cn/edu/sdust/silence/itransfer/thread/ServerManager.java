@@ -70,12 +70,17 @@ public class ServerManager extends Thread {
             }
         };
 
-        try {
-            socket = serverSocket.accept();
-            DateServerThread thread = new DateServerThread(sendActivityHandler, managerHandler, filePath, socket);
-            thread.start();
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(serverSocket != null) {
+            try {
+                socket = serverSocket.accept();
+                if(socket != null) {
+                    DateServerThread thread = new DateServerThread(sendActivityHandler, managerHandler, filePath, socket);
+                    thread.start();
+                    return;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         Looper.loop();
