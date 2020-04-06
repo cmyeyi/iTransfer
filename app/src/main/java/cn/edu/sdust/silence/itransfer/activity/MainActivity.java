@@ -1,11 +1,15 @@
 package cn.edu.sdust.silence.itransfer.activity;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.widget.DrawerLayout;
@@ -59,11 +63,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         setTitle("");
         mkDir();
         initView();
-        initEnvent();
+        initListener();
         initToolbar();
         aboutDrawer();
         initViewPager();
         initLogo();
+    }
+
+    private static final int CODE_REQ_PERMISSIONS = 1;
+
+    protected void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
     private void aboutDrawer() {
@@ -73,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void testWifiState() {
-        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         if (wifiManager.isWifiEnabled())
             wifiStartState = true;
     }
@@ -171,20 +181,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         mViewPager.getPagerTitleStrip().setViewPager(mViewPager.getViewPager());
     }
 
-    private void initEnvent() {
+    private void initListener() {
         sendBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, ChoseFileActivity.class);
-                startActivityForResult(intent, 1);
+                if(checkPermission()) {
+                    Intent intent = new Intent(MainActivity.this, ChoseFileActivity.class);
+                    startActivityForResult(intent, 1);
+                }
             }
         });
 
         receiveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, ReceiveActivity.class);
-                startActivityForResult(intent, 1);
+                if(checkPermission()) {
+                    Intent intent = new Intent(MainActivity.this, ReceiveActivity.class);
+                    startActivityForResult(intent, 1);
+                }
             }
         });
         actionMenu.setOnTouchListener(this);
@@ -223,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     public boolean onOptionsItemSelected(MenuItem item) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("提示");
-        builder.setMessage("本软件为第五届中国软件杯参赛作品\n\n如有问题请联系:\nfeiqishi@foxmail.com\n\n©silence");
+        builder.setMessage("p2p点对点传输");
         builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -278,9 +292,36 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         if (v.getId() != actionMenu.getAddButtonId()) {
             if (actionMenu.isExpanded()) {
                 actionMenu.collapse();
-//                Toast.makeText(MainActivity.this, "touch", Toast.LENGTH_LONG).show();
             }
         }
         return false;
+    }
+
+
+    public boolean checkPermission() {
+        if (!hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) || !hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE,}, CODE_REQ_PERMISSIONS);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean hasPermission(String permission) {
+        return ActivityCompat.checkSelfPermission(getBaseContext(), permission) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CODE_REQ_PERMISSIONS) {
+            for (int i = 0; i < grantResults.length; i++) {
+                if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                    showToast("缺少权限，请先授予权限");
+                    showToast(permissions[i]);
+                    return;
+                }
+            }
+            showToast("已获得权限");
+        }
     }
 }

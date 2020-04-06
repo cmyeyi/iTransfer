@@ -247,12 +247,13 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
      * @param bundle    The extras
      */
     public void handleDecode(Result rawResult, Bundle bundle) {
+        Log.i("###", "handleDecode: " + rawResult.getText());
         inactivityTimer.onActivity();
         beepManager.playBeepSoundAndVibrate();
         if (TYPE_INTENT == TYPE_INTENT_SEND) {
             String result = rawResult.getText();
             String fileName = result.substring(result.indexOf("=", result.indexOf("&")) + 1);
-            Log.i("abc", "fileName: " + fileName);
+            Log.i("###", "fileName: " + fileName);
 
             for (int i = 0; i < fileLogs.size(); i++) {
                 FileLog file = fileLogs.get(i);
@@ -261,6 +262,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             }
 
         } else if (TYPE_INTENT == TYPE_INTENT_RECEIVE) {
+            Log.i("###", "result: " + rawResult.getText());
             bundle.putString("result", rawResult.getText());
             bundle.putInt("flag", ReceiveFromComputerActivity.TYPE_SCAN);
             startActivity(new Intent(CaptureActivity.this, ReceiveFromComputerActivity.class).putExtras(bundle));

@@ -42,8 +42,7 @@ public class DataReceiveThread extends Thread {
     public void run() {
         socket = new Socket();
         try {
-            socket.connect((new InetSocketAddress(ip, 8888)),
-                    5000);
+            socket.connect((new InetSocketAddress(ip, 8888)),180*1000);
             InputStream is = socket.getInputStream();
 
             File file = getClientFileName(is);

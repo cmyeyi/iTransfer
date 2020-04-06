@@ -167,7 +167,6 @@ public class FsService extends Service implements Runnable {
     public void run() {
         Log.d(TAG, "Server thread running");
 
-        //// TODO: 2016/6/21
         if (isConnectedToLocalNetwork() == false) {
             Log.w(TAG, "run: There is no local network, bailing out");
             stopSelf();
@@ -185,7 +184,7 @@ public class FsService extends Service implements Runnable {
             return;
         }
 
-        // @TODO: when using ethernet, is it needed to take wifi lock?
+        //TODO: when using ethernet, is it needed to take wifi lock?
         takeWifiLock();
         takeWakeLock();
 
@@ -269,8 +268,8 @@ public class FsService extends Service implements Runnable {
     private void takeWifiLock() {
         Log.d(TAG, "takeWifiLock: Taking wifi lock");
         if (wifiLock == null) {
-            WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-            wifiLock = manager.createWifiLock(TAG);
+            WifiManager wifiManager = ITransferApp.getWifiManager();
+            wifiLock = wifiManager.createWifiLock(TAG);
             wifiLock.setReferenceCounted(false);
         }
         wifiLock.acquire();
@@ -288,9 +287,8 @@ public class FsService extends Service implements Runnable {
         }
         // TODO: next if block could probably be removed
         if (isConnectedUsingWifi() == true) {
-            Context context = ITransferApp.getAppContext();
-            WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-            int ipAddress = wm.getConnectionInfo().getIpAddress();
+            WifiManager wifiManager = ITransferApp.getWifiManager();
+            int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
             if (ipAddress == 0)
                 return null;
             return Util.intToInet(ipAddress);
@@ -333,10 +331,10 @@ public class FsService extends Service implements Runnable {
                 && (ni.getType() & (ConnectivityManager.TYPE_WIFI | ConnectivityManager.TYPE_ETHERNET)) != 0;
         if (connected == false) {
             Log.d(TAG, "isConnectedToLocalNetwork: see if it is an WIFI AP");
-            WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+            WifiManager wifiManager = ITransferApp.getWifiManager();
             try {
-                Method method = wm.getClass().getDeclaredMethod("isWifiApEnabled");
-                connected = (Boolean) method.invoke(wm);
+                Method method = wifiManager.getClass().getDeclaredMethod("isWifiApEnabled");
+                connected = (Boolean) method.invoke(wifiManager);
             } catch (Exception e) {
                 e.printStackTrace();
             }

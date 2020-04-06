@@ -20,7 +20,7 @@ public class ReceiveActivityHandler extends Handler {
     @Override
     public void handleMessage(Message msg) {
         if (msg.what == TYPE_PROCESS) {
-            activity.setProcess(msg.arg1);
+            activity.refreshProcess(msg.arg1);
         }
 
         super.handleMessage(msg);

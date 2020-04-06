@@ -23,6 +23,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.wifi.WifiManager;
 import android.os.Environment;
 import android.util.Log;
 
@@ -37,11 +38,12 @@ public class ITransferApp extends Application {
 
     private static final String TAG = ITransferApp.class.getSimpleName();
     private static Context sContext;
-
+    private static WifiManager wifiManager = null;
     @Override
     public void onCreate() {
         super.onCreate();
         sContext = getApplicationContext();
+        wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
     }
 
     /**
@@ -53,6 +55,11 @@ public class ITransferApp extends Application {
         }
         return sContext;
     }
+
+    public static WifiManager getWifiManager() {
+        return wifiManager;
+    }
+
 
     /**
      * @return true if this is the free version

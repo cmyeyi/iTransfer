@@ -89,39 +89,17 @@ public class ChoseFileRecyclerViewFragment extends Fragment {
         mRecyclerView.setHasFixedSize(true);
 
         TestRecyclerViewAdapter tAdapter = new TestRecyclerViewAdapter();
-        tAdapter.setOnItemClickListener(new TestRecyclerViewAdapter.OnItemClickListener() {
-                                            @Override
-                                            public void onItemClick(View view, int position) {
-                                                final String item = mHandler.getData(position);
-                                                String path = mFileMag.getCurrentDir() + "/" + item;
-                                                File file = new File(path);
-                                                if (file.isDirectory()) {
-                                                    if (file.canRead()) {
-                                                        mHandler.stopThumbnailThread();
-                                                        mHandler.updateDirectory(mFileMag.getNextDir(item, false));
-//                                                        Toast.makeText(getContext(), "click  " + item + ", position " + position, Toast.LENGTH_LONG).show();
+        tAdapter.setOnItemClickListener(
+                new TestRecyclerViewAdapter.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(View view, int position) {
+                        sendFile(position);
+                    }
 
-                                                        if (!mUseBackKey)
-                                                            mUseBackKey = true;
-
-                                                    } else {
-                                                        Toast.makeText(getActivity(), "Can't read folder due to permissions",
-                                                                Toast.LENGTH_SHORT).show();
-                                                    }
-                                                } else {
-                                                    Intent intent = new Intent(context, SendActivity.class);
-                                                    intent.putExtra("path", path);
-                                                    startActivity(intent);
-                                                    context.finish();
-                                                }
-                                            }
-
-                                            @Override
-                                            public void onItemLongClick(View view, int position) {
-                                            }
-                                        }
-
-        );
+                    @Override
+                    public void onItemLongClick(View view, int position) {
+                    }
+                });
 
         mAdapter = new RecyclerViewMaterialAdapter(tAdapter);
 
@@ -131,6 +109,28 @@ public class ChoseFileRecyclerViewFragment extends Fragment {
         MaterialViewPagerHelper.registerRecyclerView(
                 getActivity(), mRecyclerView,
                 null);
+    }
+
+    private void sendFile(int position) {
+        final String item = mHandler.getData(position);
+        String path = mFileMag.getCurrentDir() + "/" + item;
+        File file = new File(path);
+        if (file.isDirectory()) {
+            if (file.canRead()) {
+                mHandler.stopThumbnailThread();
+                mHandler.updateDirectory(mFileMag.getNextDir(item, false));
+                if (!mUseBackKey)
+                    mUseBackKey = true;
+
+            } else {
+                Toast.makeText(getActivity(), "Can't read folder due to permissions",Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Intent intent = new Intent(context, SendActivity.class);
+            intent.putExtra("path", path);
+            startActivity(intent);
+            context.finish();
+        }
     }
 
 

@@ -424,7 +424,9 @@ public class RecyclerViewFragment extends Fragment {
     }
 
     public void reUpdateCurrentDir() {
-        mHandler.updateDirectory(mFileMag.getCurrentDirContent());
+        if(mHandler != null && mFileMag != null){
+            mHandler.updateDirectory(mFileMag.getCurrentDirContent());
+        }
     }
 
 }
