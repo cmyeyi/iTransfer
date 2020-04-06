@@ -78,7 +78,7 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
         initView();
         initIntentFilter();
         initWifiP2p();
-        DiscoverPeers();
+        discoverPeers();
     }
 
 
@@ -128,12 +128,12 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
                     manager.start();
                     isConnectServer = true;
 
-                    Log.i("xyz", "create receive manage sucess");
+                    Log.i("xyz", "create receive manage sucess，is owner");
                 } else if (info.groupFormed && !info.isGroupOwner && !isConnectServer) {
                     ReceiveManager2 manager = new ReceiveManager2(handler, info.groupOwnerAddress.getHostAddress());
                     manager.start();
                     isConnectServer = true;
-                    Log.i("xyz", "create receive manage sucess");
+                    Log.i("xyz", "create receive manage sucess not owner");
                 }
             }
         };
@@ -145,7 +145,7 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
         mManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                CreateConnect(address);
+                createConnect(address);
             }
 
             @Override
@@ -155,13 +155,14 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
         });
     }
 
-    private void CreateConnect(String address) {
+    private void createConnect(String address) {
+        Log.e("#####", "receiver createConnect," + address);
         final WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = address;
         config.groupOwnerIntent = 0;
         config.wps.setup = WpsInfo.PBC;
 
-        Log.i("xyz", "other address : " + address);
+        Log.i("xyz", "receive other address : " + address);
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
 
             @Override
@@ -237,9 +238,14 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
                 builder.setTitle("请选择文件接收模式");
                 LayoutInflater inflater = LayoutInflater.from(ReceiveActivity.this);
                 View view = inflater.inflate(R.layout.chose_to_computer_dialog, null);
+                builder.setView(view);
+                final AlertDialog alertDialog = builder.create();
                 view.findViewById(R.id.have).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        if (alertDialog != null && alertDialog.isShowing()) {
+                            alertDialog.dismiss();
+                        }
                         Intent intent = new Intent(ReceiveActivity.this, CaptureActivity.class);
                         intent.putExtra("type", CaptureActivity.TYPE_INTENT_RECEIVE);
                         startActivity(intent);
@@ -250,13 +256,16 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
                 view.findViewById(R.id.no).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        if (alertDialog != null && alertDialog.isShowing()) {
+                            alertDialog.dismiss();
+                        }
                         Intent intent = new Intent(ReceiveActivity.this, FtpManagerActivity.class);
                         startActivity(intent);
                         finish();
                     }
                 });
-                builder.setView(view);
-                builder.show();
+
+                alertDialog.show();
             }
         });
     }
@@ -264,7 +273,7 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
     /**
      * 开启发现节点
      */
-    private void DiscoverPeers() {
+    private void discoverPeers() {
         mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -279,29 +288,13 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
 
     @Override
     public void onRadarItemClick(final int position) {
-        if(!isConnect){
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("提示");
-            builder.setMessage("确定要从 " + mDatas.get(position).getName() + " 接受文件吗？");
-            builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-
-                    tv_point.setText("正在连接");
-                    if (info == null)
-                        CreateConnect((peers.get(position)).deviceAddress);
-                    else
-                        Toast.makeText(ReceiveActivity.this, "设备已连接,正在启用接受文件", Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
-                }
-            });
-            builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
-            builder.show();
+        if(!isConnect) {
+            tv_point.setText("正在连接");
+            if (info == null) {
+                createConnect((peers.get(position)).deviceAddress);
+            } else {
+                Toast.makeText(ReceiveActivity.this, "设备已连接,正在启用接受文件", Toast.LENGTH_SHORT).show();
+            }
         }else{
             Toast.makeText(ReceiveActivity.this,"已经连接至某台设备",Toast.LENGTH_LONG).show();
         }
@@ -334,24 +327,13 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
      *
      * @param p
      */
-    public void setProcess(int p) {
+    public void refreshProcess(int p) {
         layout_point_container.setVisibility(View.GONE);
         progress.setVisibility(View.VISIBLE);
         progress.setProgress(p);
         if (p >= 100) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("提示");
-            builder.setMessage("文件接收成功！");
-            builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-
-                    dialog.dismiss();
-                    finish();
-                }
-            });
-            builder.setCancelable(false);
-            builder.show();
+            Toast.makeText(this,"文件接收成功",Toast.LENGTH_LONG).show();
+            finish();
         }
     }
 

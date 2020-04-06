@@ -25,7 +25,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -94,13 +93,14 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
             Bundle bundle = intent.getExtras();
             Uri uri = (Uri) bundle.get(Intent.EXTRA_STREAM);
             filePath = uri.getPath();
-//            Toast.makeText(SendActivity.this, "" + uri.getPath() + "  " + intent.getAction(), Toast.LENGTH_LONG).show();
+            Log.e("#######", "ACTION_SEND，" + uri.getPath() + "  " + intent.getAction());
         } else if (Intent.ACTION_VIEW == intent.getAction()) {
             Uri uri = intent.getData();
             filePath = uri.getPath();
-//            Toast.makeText(SendActivity.this, "" + uri.getPath() + "  " + intent.getAction(), Toast.LENGTH_LONG).show();
+            Log.e("#######", "ACTION_VIEW，" + uri.getPath() + "  " + intent.getAction());
         } else {
             filePath = intent.getStringExtra("path");
+            Log.e("#######", "else filepath：" + filePath);
         }
     }
 
@@ -117,7 +117,7 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
         mManager = (WifiP2pManager) getSystemService(WIFI_P2P_SERVICE);
         mChannel = mManager.initialize(this, Looper.myLooper(), null);
 
-        WifiP2pManager.PeerListListener mPeerListListerner = new WifiP2pManager.PeerListListener() {
+        WifiP2pManager.PeerListListener mPeerListListener = new WifiP2pManager.PeerListListener() {
             @Override
             public void onPeersAvailable(WifiP2pDeviceList peerList) {
                 peers.clear();
@@ -165,48 +165,33 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
             }
         };
 
-        mReceiver = new WifiP2PBroadcastReceiver(mManager, mChannel, this, mPeerListListerner, mInfoListener);
+        mReceiver = new WifiP2PBroadcastReceiver(mManager, mChannel, this, mPeerListListener, mInfoListener);
     }
 
-    private void CreateConnect(String address) {
+    private void createConnect(String address) {
+        Log.d("#####", "sender createConnect," + address);
         final WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = address;
         config.groupOwnerIntent = 0;
         config.wps.setup = WpsInfo.PBC;
 
-        Log.i("xyz", "other address : " + address);
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
 
             @Override
             public void onSuccess() {
                 if (info != null) {
                     tv_point.setText("连接成功，正在准备数据");
-                    Log.d("mac connect", "sucess");
-                    Log.d("xyz", "isGroupOwner " + info.isGroupOwner + "");
-                    Log.d("xyz", "groupOwner ip " + info.groupOwnerAddress.getHostAddress());
+                    Log.d("#####", "createConnect onSuccess" +
+                            ",isGroupOwner " + info.isGroupOwner +
+                            ",createConnect groupOwner ip " + info.groupOwnerAddress.getHostAddress());
                 }
             }
 
             @Override
             public void onFailure(int reason) {
-                Log.d("mac connect", "fail");
+                Log.d("#####", "createConnect onFailure");
             }
         });
-    }
-
-    private void startServer() {
-
-        if (info.groupFormed && info.isGroupOwner && !isConnectIp) {
-            ServerManager manager = new ServerManager(sendActivityHandler, filePath);
-            manager.start();
-            isConnectIp = true;
-            Log.i("xyz", "send create sucess");
-        } else if (info.groupFormed && !info.isGroupOwner && !isConnectIp) {
-            ServerManager2 server = new ServerManager2(sendActivityHandler, info.groupOwnerAddress.getHostAddress(), filePath);
-            server.start();
-            isConnectIp = true;
-            Log.i("xyz", "send create sucess");
-        }
     }
 
     private void initView() {
@@ -263,9 +248,14 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
                 builder.setTitle("请选择文件发送模式");
                 LayoutInflater inflater = LayoutInflater.from(SendActivity.this);
                 View view = inflater.inflate(R.layout.chose_to_computer_dialog, null);
+                builder.setView(view);
+                final AlertDialog alertDialog= builder.create();
                 view.findViewById(R.id.have).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        if (alertDialog != null && alertDialog.isShowing()) {
+                            alertDialog.dismiss();
+                        }
                         Intent intent = new Intent(SendActivity.this, SendToComputerActivity.class);
                         intent.putExtra("path", filePath);
                         startActivity(intent);
@@ -276,13 +266,16 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
                 view.findViewById(R.id.no).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        if (alertDialog != null && alertDialog.isShowing()) {
+                            alertDialog.dismiss();
+                        }
                         Intent intent = new Intent(SendActivity.this, FtpManagerActivity.class);
                         startActivity(intent);
                         finish();
                     }
                 });
-                builder.setView(view);
-                builder.show();
+
+                alertDialog.show();
             }
         });
     }
@@ -338,55 +331,24 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
         progress.setVisibility(View.VISIBLE);
         progress.setProgress(p);
         if (p >= 100) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("提示");
-            builder.setMessage("文件发送成功！");
-            builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-
-                    dialog.dismiss();
-                    finish();
-                }
-            });
-            builder.setCancelable(false);
-            builder.show();
+            Toast.makeText(this,"文件发送成功",Toast.LENGTH_LONG).show();
+            finish();
         }
     }
 
     @Override
     public void onRadarItemClick(final int position) {
         if (!isConnectIp) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("提示");
-            builder.setMessage("确定要将文件发送给 " + mDatas.get(position).getName() + " 吗？");
-            builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    tv_point.setText("正在连接");
-                    if (info == null)
-                        CreateConnect(peers.get(position).deviceAddress);
-                    else
-                        Toast.makeText(SendActivity.this, "设备已连接，正在启用发送文件", Toast.LENGTH_LONG).show();
-
-                }
-            });
-            builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
-            builder.show();
+            tv_point.setText("正在连接");
+            if (info == null) {
+                createConnect(peers.get(position).deviceAddress);
+            } else {
+                Toast.makeText(SendActivity.this, "设备已连接，正在启用发送文件", Toast.LENGTH_LONG).show();
+            }
         } else {
             Toast.makeText(SendActivity.this, "已经连接至某一台设备", Toast.LENGTH_SHORT).show();
         }
 
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
     }
 
     @Override
