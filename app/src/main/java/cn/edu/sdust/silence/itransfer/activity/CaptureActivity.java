@@ -26,7 +26,6 @@ import java.lang.reflect.Field;
 import cn.edu.sdust.silence.itransfer.R;
 import cn.edu.sdust.silence.itransfer.qrcode.camera.CameraManager;
 import cn.edu.sdust.silence.itransfer.qrcode.decode.DecodeThread;
-import cn.edu.sdust.silence.itransfer.qrcode.utils.BeepManager;
 import cn.edu.sdust.silence.itransfer.qrcode.utils.CaptureActivityHandler;
 import cn.edu.sdust.silence.itransfer.qrcode.utils.InactivityTimer;
 
@@ -39,7 +38,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
     private CameraManager cameraManager;
     private CaptureActivityHandler handler;
     private InactivityTimer inactivityTimer;
-    private BeepManager beepManager;
 
     private SurfaceView scanPreview = null;
     private RelativeLayout scanContainer;
@@ -94,7 +92,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         scanLine = (ImageView) findViewById(R.id.capture_scan_line);
 
         inactivityTimer = new InactivityTimer(this);
-        beepManager = new BeepManager(this);
 
         TranslateAnimation animation = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT,
                 0.8f);
@@ -140,7 +137,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             handler = null;
         }
         inactivityTimer.onPause();
-        beepManager.close();
         cameraManager.closeDriver();
         if (!isHasSurface) {
             scanPreview.getHolder().removeCallback(this);
