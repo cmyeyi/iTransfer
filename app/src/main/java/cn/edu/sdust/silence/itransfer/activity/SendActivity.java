@@ -135,7 +135,7 @@ public class SendActivity extends Activity implements DirectActionListener {
             public void onConnectionInfoAvailable(WifiP2pInfo availableInfo) {
                 showTransferLoading();
                 mWifiInfo = availableInfo;
-                tv_point.setText("发送端，连接成功，准备发送数据");
+                tv_point.setText("连接成功，准备发送数据");
                 Log.i("#####", "发送端，#onConnectionInfoAvailable#" + "，isOwner=" + mWifiInfo.isGroupOwner + ",isConnectClient=" + isConnectClient);
                 Log.i("#####", "发送端，groupFormed：" + mWifiInfo.groupFormed);
                 Log.i("#####", "发送端 isConnectClient:" + isConnectClient);
@@ -172,7 +172,7 @@ public class SendActivity extends Activity implements DirectActionListener {
             @Override
             public void onSuccess() {
                 if (mWifiInfo != null) {
-                    tv_point.setText("连接成功，正在准备数据");
+                    tv_point.setText("连接成功，正在发送数据");
                     Log.d("#####", "createConnect onSuccess" +
                             ",isGroupOwner " + mWifiInfo.isGroupOwner +
                             ",createConnect groupOwner ip " + mWifiInfo.groupOwnerAddress.getHostAddress());
@@ -307,18 +307,6 @@ public class SendActivity extends Activity implements DirectActionListener {
     }
 
     private void disconnect() {
-        mWifiP2pManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Log.e("#####", "cancelConnect，onSuccess，切断链接，成功");
-            }
-
-            @Override
-            public void onFailure(int reason) {
-                Log.e("#####", "cancelConnect，onFailure，切断链接，失败");
-            }
-        });
-
         mWifiP2pManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -340,5 +328,10 @@ public class SendActivity extends Activity implements DirectActionListener {
 
         Bitmap bitmap = ZXingUtil.createQRCode(deviceSelf.deviceAddress,150,150);
         qrcodeView.setImageBitmap(bitmap);
+    }
+
+    @Override
+    public void onReconnect() {
+        Log.i("#####", "#####从新开始连接#####");
     }
 }

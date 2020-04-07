@@ -62,14 +62,14 @@ public class WifiP2PBroadcastReceiver extends BroadcastReceiver {
                 return;
             }
 
-            NetworkInfo networkInfo = (NetworkInfo) intent
-                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+            NetworkInfo networkInfo = (NetworkInfo) intent.getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
             if (networkInfo.isConnected()) {
                 Log.i("xyz", "已连接");
                 mManager.requestConnectionInfo(mChannel, mInfoListener);
             } else {
                 Log.i("xyz", "断开连接");
+                mDirectActionListener.onReconnect();
                 return;
             }
         }

@@ -90,7 +90,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
             @Override
             public void onChannelDisconnected() {
-                Log.e("#####","接收端，###########onChannelDisconnected");
+                Log.e("#####","接收端，#onChannelDisconnected#");
             }
         });
 
@@ -137,18 +137,6 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
     }
 
     private void disconnect() {
-        mManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Log.e("#####", "cancelConnect，onSuccess，切断链接，成功");
-            }
-
-            @Override
-            public void onFailure(int reason) {
-                Log.e("#####", "cancelConnect，onFailure，切断链接，失败");
-            }
-        });
-
         mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -180,7 +168,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
             public void onSuccess() {
                 if (mWifiInfo != null) {
                     isConnect = true;
-                    tv_point.setText("连接成功，接收端，准备接收数据");
+                    tv_point.setText("连接成功，正在接收数据");
                     Log.d("#####", "接收端,创建连接 onSuccess");
                 }
             }
@@ -189,7 +177,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
             public void onFailure(int reason) {
                 isConnect = false;
                 Log.d("#####", "接收端, 创建连接 onFailure");
-                createConnect(connectAddress);
+//                createConnect(connectAddress);
             }
         });
     }
@@ -320,5 +308,11 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
         this.deviceSelf = wifiP2pDevice;
         Log.i("#####", "接收端 自己的Name:" + deviceSelf.deviceName);
         Log.i("#####", "接收端 自己的Address:" + deviceSelf.deviceAddress);
+    }
+
+    @Override
+    public void onReconnect() {
+        Log.i("#####", "接收端，开始重新连接");
+        createConnect(connectAddress);
     }
 }
