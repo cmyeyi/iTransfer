@@ -1,10 +1,6 @@
 package cn.edu.sdust.silence.itransfer.ui.fragment;
 
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
@@ -20,19 +16,15 @@ import com.github.florent37.materialviewpager.MaterialViewPagerHelper;
 import com.github.florent37.materialviewpager.adapter.RecyclerViewMaterialAdapter;
 
 import java.io.File;
-import java.util.ArrayList;
 
 import cn.edu.sdust.silence.itransfer.R;
 import cn.edu.sdust.silence.itransfer.activity.ChoseFileActivity;
+import cn.edu.sdust.silence.itransfer.activity.SendActivity;
 import cn.edu.sdust.silence.itransfer.ui.TestRecyclerViewAdapter;
 import cn.edu.sdust.silence.itransfer.ui.file.EventHandler;
 import cn.edu.sdust.silence.itransfer.ui.file.FileManager;
-import cn.edu.sdust.silence.itransfer.activity.SendActivity;
 
 
-/**
- * Created by florentchampigny on 24/04/15.
- */
 public class ChoseFileRecyclerViewFragment extends Fragment {
 
     private RecyclerView mRecyclerView;

@@ -29,13 +29,6 @@ import android.util.Log;
 
 public class ITransferApp extends Application {
 
-    public static String username = "admin";
-    public static String password = "admin";
-    public static boolean allow_anonymous = true;
-    public static String chrootDir = Environment.getExternalStorageDirectory().toString();
-    public static int portNum = 2121;
-    public static boolean shouldTakeFullWakeLock = true;
-
     private static final String TAG = ITransferApp.class.getSimpleName();
     private static Context sContext;
     private static WifiManager wifiManager = null;

@@ -31,7 +31,6 @@ import cn.edu.sdust.silence.itransfer.thread.ReceiveManager;
 import cn.edu.sdust.silence.itransfer.thread.ReceiveManager2;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
-import cn.edu.sdust.silence.itransfer.ui.scan.custom.RadarViewGroup;
 
 public class ReceiveActivity extends AppCompatActivity implements DirectActionListener {
 
