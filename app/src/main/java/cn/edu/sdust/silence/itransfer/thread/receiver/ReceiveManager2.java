@@ -1,11 +1,11 @@
-package cn.edu.sdust.silence.itransfer.thread;
+package cn.edu.sdust.silence.itransfer.thread.receiver;
 
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
+import cn.edu.sdust.silence.itransfer.thread.receiver.DataReceiveThread;
 
 /**
  * 接收文件子线程管理线程

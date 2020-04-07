@@ -1,8 +1,7 @@
-package cn.edu.sdust.silence.itransfer.thread;
+package cn.edu.sdust.silence.itransfer.thread.server;
 
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,8 +43,7 @@ public class DataServerThread2 extends Thread {
         Socket socket = new Socket();
 
         try {
-            socket.connect((new InetSocketAddress(ip, 8888)),
-                    5000);
+            socket.connect((new InetSocketAddress(ip, 8888)),5000);
 
             OutputStream os = socket.getOutputStream();
             InputStream is = socket.getInputStream();

@@ -1,4 +1,4 @@
-package cn.edu.sdust.silence.itransfer.thread;
+package cn.edu.sdust.silence.itransfer.thread.server;
 
 import android.os.Handler;
 import android.os.Message;
@@ -9,7 +9,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.activity.SendActivity;

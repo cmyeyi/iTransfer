@@ -35,8 +35,8 @@ import cn.edu.sdust.silence.itransfer.handler.SendActivityHandler;
 import cn.edu.sdust.silence.itransfer.qrcode.utils.ZXingUtil;
 import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
-import cn.edu.sdust.silence.itransfer.thread.ServerManager;
-import cn.edu.sdust.silence.itransfer.thread.ServerManager2;
+import cn.edu.sdust.silence.itransfer.thread.server.ServerManager;
+import cn.edu.sdust.silence.itransfer.thread.server.ServerManager2;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
 
@@ -55,7 +55,6 @@ public class SendActivity extends Activity implements DirectActionListener {
     private BroadcastReceiver mReceiver;
     private WifiP2pManager mWifiP2pManager;
     private WifiP2pManager.Channel mChannel;
-    private WifiP2pInfo mWifiInfo;
     private String filePath;
     private boolean isConnectClient = false;
     private SendActivityHandler sendActivityHandler;
@@ -66,6 +65,7 @@ public class SendActivity extends Activity implements DirectActionListener {
     private Map<String, Long> map = new HashMap<>();
     private ImageButton back;
     private WifiP2pDevice deviceSelf;
+    private WifiP2pInfo mWifiInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,20 +132,20 @@ public class SendActivity extends Activity implements DirectActionListener {
 
         WifiP2pManager.ConnectionInfoListener mInfoListener = new WifiP2pManager.ConnectionInfoListener() {
             @Override
-            public void onConnectionInfoAvailable(WifiP2pInfo availableInfo) {
+            public void onConnectionInfoAvailable(WifiP2pInfo wifiInfo) {
+                mWifiInfo = wifiInfo;
                 showTransferLoading();
-                mWifiInfo = availableInfo;
                 tv_point.setText("连接成功，准备发送数据");
-                Log.i("#####", "发送端，#onConnectionInfoAvailable#" + "，isOwner=" + mWifiInfo.isGroupOwner + ",isConnectClient=" + isConnectClient);
-                Log.i("#####", "发送端，groupFormed：" + mWifiInfo.groupFormed);
+                Log.i("#####", "发送端，#onConnectionInfoAvailable#" + "，isOwner=" + wifiInfo.isGroupOwner + ",isConnectClient=" + isConnectClient);
+                Log.i("#####", "发送端，groupFormed：" + wifiInfo.groupFormed);
                 Log.i("#####", "发送端 isConnectClient:" + isConnectClient);
-                if (mWifiInfo.groupFormed && !isConnectClient) {
-                    Log.i("#####", "发送端 isGroupOwner:" + mWifiInfo.isGroupOwner);
-                    if (mWifiInfo.isGroupOwner) {
+                if (wifiInfo.groupFormed && !isConnectClient) {
+                    Log.i("#####", "发送端 isGroupOwner:" + wifiInfo.isGroupOwner);
+                    if (wifiInfo.isGroupOwner) {
                         ServerManager manager = new ServerManager(sendActivityHandler, filePath);
                         manager.start();
                     } else {
-                        ServerManager2 server = new ServerManager2(sendActivityHandler, mWifiInfo.groupOwnerAddress.getHostAddress(), filePath);
+                        ServerManager2 server = new ServerManager2(sendActivityHandler, wifiInfo.groupOwnerAddress.getHostAddress(), filePath);
                         server.start();
                     }
                     isConnectClient = true;

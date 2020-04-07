@@ -1,9 +1,8 @@
-package cn.edu.sdust.silence.itransfer.thread;
+package cn.edu.sdust.silence.itransfer.thread.server;
 
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 import java.io.IOException;
 import java.net.ServerSocket;

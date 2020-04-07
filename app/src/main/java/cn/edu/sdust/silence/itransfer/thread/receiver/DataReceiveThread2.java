@@ -1,4 +1,4 @@
-package cn.edu.sdust.silence.itransfer.thread;
+package cn.edu.sdust.silence.itransfer.thread.receiver;
 
 import android.os.Environment;
 import android.os.Handler;
@@ -10,7 +10,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
@@ -18,42 +17,49 @@ import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
 /**
  * 接收文件线程
  */
-public class DataReceiveThread extends Thread {
+public class DataReceiveThread2 extends Thread {
+
+    private long length;
+    private String fileName;
 
     private Socket socket;
-    private String ip;
-    private String fileName;
-    private long length; //文件大小
     private ReceiveActivityHandler receiveActivityHandler;
     private Handler managerHandler;
 
-    public DataReceiveThread(Handler managerHandler, ReceiveActivityHandler receiveActivityHandler, String ip) {
-        this.ip = ip.trim();
-        fileName = "";
-        length = 0;
-        this.receiveActivityHandler = receiveActivityHandler;
+
+    public DataReceiveThread2(Handler managerHandler, ReceiveActivityHandler receiveActivityHandler, Socket socket) {
         this.managerHandler = managerHandler;
+        this.receiveActivityHandler = receiveActivityHandler;
+        this.socket = socket;
     }
 
     @Override
     public void run() {
-        socket = new Socket();
+
         try {
-            socket.connect((new InetSocketAddress(ip, 8888)),180*1000);
             InputStream is = socket.getInputStream();
 
             File file = getClientFileName(is);
             length = getFileLength(is);
+
             FileOutputStream os = new FileOutputStream(file);
             copyFile(is, os);
 
             is.close();
             os.close();
-            socket.close();
             sendFinishMessage();
-        } catch (Exception e) {
-            sendErrorMessage();
+        } catch (IOException e) {
+            sendErroeMessage();
+            Log.e("xyz", e.getMessage());
             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -109,12 +115,9 @@ public class DataReceiveThread extends Thread {
         sockOut.write(infoStr.getBytes());
     }
 
-    /**
-     * 发送错误信息
-     */
-    private void sendErrorMessage() {
+    private void sendErroeMessage() {
         Message msg = new Message();
-        msg.what = ReceiveManager2.RETRY;
+        msg.what = ReceiveManager.RETRY;
         managerHandler.sendMessage(msg);
     }
 
@@ -123,7 +126,7 @@ public class DataReceiveThread extends Thread {
      */
     private void sendFinishMessage() {
         Message msg = new Message();
-        msg.what = ReceiveManager2.FINISH;
+        msg.what = ReceiveManager.FINISH;
         managerHandler.sendMessage(msg);
     }
 }

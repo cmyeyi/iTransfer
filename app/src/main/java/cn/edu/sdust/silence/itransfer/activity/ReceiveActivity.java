@@ -27,8 +27,8 @@ import cn.edu.sdust.silence.itransfer.R;
 import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
 import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
-import cn.edu.sdust.silence.itransfer.thread.ReceiveManager;
-import cn.edu.sdust.silence.itransfer.thread.ReceiveManager2;
+import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveManager;
+import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveManager2;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
 
@@ -41,7 +41,6 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
     //wifi p2p
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
-    private WifiP2pInfo mWifiInfo;
 
     //this is a flag about connection
     private boolean isConnect = false;
@@ -109,20 +108,19 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
         WifiP2pManager.ConnectionInfoListener cInfo = new WifiP2pManager.ConnectionInfoListener() {
             @Override
-            public void onConnectionInfoAvailable(WifiP2pInfo availableInfo) {
+            public void onConnectionInfoAvailable(WifiP2pInfo wifiInfo) {
                 showTransferLoading();
-                mWifiInfo = availableInfo;
                 tv_point.setText("接收端，连接成功，准备接收数据");
                 Log.i("#####", "接收端，#onConnectionInfoAvailable#");
-                Log.i("#####", "接收端，isOwner=" + mWifiInfo.isGroupOwner);
-                Log.i("#####", "接收端，groupFormed:" + mWifiInfo.groupFormed);
+                Log.i("#####", "接收端，isOwner=" + wifiInfo.isGroupOwner);
+                Log.i("#####", "接收端，groupFormed:" + wifiInfo.groupFormed);
                 Log.i("#####", "接收端，isConnectServer:" + isConnectServer);
-                if (mWifiInfo.groupFormed && !isConnectServer) {
-                    if (mWifiInfo.isGroupOwner) {
+                if (wifiInfo.groupFormed && !isConnectServer) {
+                    if (wifiInfo.isGroupOwner) {
                         ReceiveManager manager = new ReceiveManager(handler);
                         manager.start();
                     } else {
-                        ReceiveManager2 manager = new ReceiveManager2(handler, mWifiInfo.groupOwnerAddress.getHostAddress());
+                        ReceiveManager2 manager = new ReceiveManager2(handler, wifiInfo.groupOwnerAddress.getHostAddress());
                         manager.start();
                     }
                     isConnectServer = true;
@@ -166,11 +164,9 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
             @Override
             public void onSuccess() {
-                if (mWifiInfo != null) {
-                    isConnect = true;
-                    tv_point.setText("连接成功，正在接收数据");
-                    Log.d("#####", "接收端,创建连接 onSuccess");
-                }
+                isConnect = true;
+                tv_point.setText("连接成功，正在接收数据");
+                Log.d("#####", "接收端,创建连接 onSuccess");
             }
 
             @Override
