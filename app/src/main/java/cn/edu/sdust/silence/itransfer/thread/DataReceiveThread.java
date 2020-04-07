@@ -16,10 +16,7 @@ import java.net.Socket;
 import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
 
 /**
- *
- * 接受文件线程
- *
- * Created by feiqishi on 2016/5/5.
+ * 接收文件线程
  */
 public class DataReceiveThread extends Thread {
 
@@ -83,7 +80,7 @@ public class DataReceiveThread extends Thread {
     public File getClientFileName(InputStream is) throws Exception {
         byte[] buf = new byte[1024];
         int len = 0;
-        len = is.read(buf);
+        len = is.read(buf); // 获取文件名
         fileName = new String(buf, 0, len);
 
         //如果文件存在，重命名

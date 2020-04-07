@@ -2,7 +2,6 @@ package cn.edu.sdust.silence.itransfer.activity;
 
 import android.content.BroadcastReceiver;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.net.wifi.WpsInfo;
@@ -16,9 +15,7 @@ import android.os.Looper;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,23 +25,15 @@ import java.util.List;
 
 import cn.edu.sdust.silence.itransfer.R;
 import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
+import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
 import cn.edu.sdust.silence.itransfer.thread.ReceiveManager;
 import cn.edu.sdust.silence.itransfer.thread.ReceiveManager2;
-import cn.edu.sdust.silence.itransfer.ui.actionbutton.FloatingActionButton;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
-import cn.edu.sdust.silence.itransfer.ui.scan.been.Info;
 import cn.edu.sdust.silence.itransfer.ui.scan.custom.RadarViewGroup;
 
-/**
- * create by shifeiqi
- */
-public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup.IRadarClickListener {
-
-    private RadarViewGroup radarViewGroup;
-    private SparseArray<Info> mDatas = new SparseArray<>();
-
+public class ReceiveActivity extends AppCompatActivity implements DirectActionListener {
 
     //broadcastReceive
     private IntentFilter mFilter;
@@ -53,7 +42,7 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
     //wifi p2p
     private WifiP2pManager mManager;
     private WifiP2pManager.Channel mChannel;
-    private WifiP2pInfo info;
+    private WifiP2pInfo mWifiInfo;
 
     //this is a flag about connection
     private boolean isConnect = false;
@@ -68,19 +57,24 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
     private RotateLoading loading;
     private TextView tv_point;
     private View layout_point_container;
-
-    private FloatingActionButton receiveFormComputer;
-
+    private WifiP2pDevice deviceSelf;
+    private String connectAddress;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getConnectAddress();
         setContentView(R.layout.activity_scan);
         initView();
         initIntentFilter();
         initWifiP2p();
         discoverPeers();
+        createConnect(connectAddress);
     }
 
+    private void getConnectAddress() {
+        connectAddress = getIntent().getStringExtra("address");
+        Log.d("#####","接收端，扫码获取："+ connectAddress);
+    }
 
     private void initIntentFilter() {
         mFilter = new IntentFilter();
@@ -93,100 +87,116 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
 
     private void initWifiP2p() {
         mManager = (WifiP2pManager) getSystemService(WIFI_P2P_SERVICE);
-        mChannel = mManager.initialize(this, Looper.myLooper(), null);
+        mChannel = mManager.initialize(this, Looper.myLooper(), new WifiP2pManager.ChannelListener(){
+
+            @Override
+            public void onChannelDisconnected() {
+                Log.e("#####","接收端，###########onChannelDisconnected");
+            }
+        });
 
         WifiP2pManager.PeerListListener mPeerListListener = new WifiP2pManager.PeerListListener() {
             @Override
             public void onPeersAvailable(WifiP2pDeviceList peerList) {
-
                 peers.clear();
                 peers.addAll(peerList.getDeviceList());
-
-                mDatas.clear();
                 for (int i = 0; i < peers.size(); i++) {
                     WifiP2pDevice d = peers.get(i);
-                    Info info = new Info();
-                    info.setName(d.deviceName);
-                    info.setPortraitId(R.drawable.icon_receice);
-                    info.setAge(((int) Math.random() * 25 + 16) + "岁");
-                    info.setSex(true);
-                    info.setDistance(Math.round((Math.random() * 10) * 100) / 100);
-                    mDatas.put(i, info);
+                    Log.e("#####","onPeersAvailable deviceAddress:"+d.deviceAddress);
+                    createConnect(connectAddress);
                 }
-                radarViewGroup.setDatas(mDatas);
             }
         };
 
         WifiP2pManager.ConnectionInfoListener cInfo = new WifiP2pManager.ConnectionInfoListener() {
             @Override
-            public void onConnectionInfoAvailable(WifiP2pInfo minfo) {
-
-                tv_point.setText("连接成功，正在准备数据");
-                info = minfo;
-                if (info.groupFormed && info.isGroupOwner && !isConnectServer) {
-                    ReceiveManager manager = new ReceiveManager(handler);
-                    manager.start();
+            public void onConnectionInfoAvailable(WifiP2pInfo availableInfo) {
+                showTransferLoading();
+                mWifiInfo = availableInfo;
+                tv_point.setText("接收端，连接成功，准备接收数据");
+                Log.i("#####", "接收端，#onConnectionInfoAvailable#");
+                Log.i("#####", "接收端，isOwner=" + mWifiInfo.isGroupOwner);
+                Log.i("#####", "接收端，groupFormed:" + mWifiInfo.groupFormed);
+                Log.i("#####", "接收端，isConnectServer:" + isConnectServer);
+                if (mWifiInfo.groupFormed && !isConnectServer) {
+                    if (mWifiInfo.isGroupOwner) {
+                        ReceiveManager manager = new ReceiveManager(handler);
+                        manager.start();
+                    } else {
+                        ReceiveManager2 manager = new ReceiveManager2(handler, mWifiInfo.groupOwnerAddress.getHostAddress());
+                        manager.start();
+                    }
                     isConnectServer = true;
-
-                    Log.i("xyz", "create receive manage sucess，is owner");
-                } else if (info.groupFormed && !info.isGroupOwner && !isConnectServer) {
-                    ReceiveManager2 manager = new ReceiveManager2(handler, info.groupOwnerAddress.getHostAddress());
-                    manager.start();
-                    isConnectServer = true;
-                    Log.i("xyz", "create receive manage sucess not owner");
+                } else {
+                    //TODO
+                    Log.w("#####", "接收端，groupFormed false");
                 }
             }
         };
 
-        mReceiver = new WifiP2PBroadcastReceiver(mManager, mChannel, this, mPeerListListener, cInfo);
+        mReceiver = new WifiP2PBroadcastReceiver(mManager, mChannel, this, mPeerListListener, cInfo, this);
     }
 
-    private void CancelConnect(final String address) {
+    private void disconnect() {
         mManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                createConnect(address);
+                Log.e("#####", "cancelConnect，onSuccess，切断链接，成功");
             }
 
             @Override
             public void onFailure(int reason) {
+                Log.e("#####", "cancelConnect，onFailure，切断链接，失败");
+            }
+        });
 
+        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.e("#####", "removeGroup，onSuccess");
+            }
+
+            @Override
+            public void onFailure(int i) {
+                Log.e("#####", "removeGroup，onFailure");
             }
         });
     }
 
     private void createConnect(String address) {
-        Log.e("#####", "receiver createConnect," + address);
+        Log.e("#####", "#####createConnect#####");
+        if(isConnect) {
+            Log.e("#####", "已经创建过连接，本次连接无效");
+            return;
+        }
+        Log.e("#####", "接收端,开始创建连接，address=" + address);
         final WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = address;
-        config.groupOwnerIntent = 0;
+        config.groupOwnerIntent = 15;
         config.wps.setup = WpsInfo.PBC;
 
-        Log.i("xyz", "receive other address : " + address);
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
 
             @Override
             public void onSuccess() {
-                if (info != null) {
-                    tv_point.setText("连接成功，正在准备数据");
-                    Log.d("mac connect", "sucess");
+                if (mWifiInfo != null) {
                     isConnect = true;
-                    Log.d("xyz", "isGroupOwner " + info.isGroupOwner + "");
-                    Log.d("xyz", "groupOwner ip " + info.groupOwnerAddress.getHostAddress());
+                    tv_point.setText("连接成功，接收端，准备接收数据");
+                    Log.d("#####", "接收端,创建连接 onSuccess");
                 }
             }
 
             @Override
             public void onFailure(int reason) {
                 isConnect = false;
-                Log.d("mac connect", "fail");
+                Log.d("#####", "接收端, 创建连接 onFailure");
+                createConnect(connectAddress);
             }
         });
     }
 
     private void initView() {
-        radarViewGroup = (RadarViewGroup) findViewById(R.id.radar);
-        radarViewGroup.setiRadarClickListener(this);
+        findViewById(R.id.id_qrcode_view).setVisibility(View.GONE);
         progress = (NumberProgressBar) findViewById(R.id.progress);
         progress.setProgressTextColor(Color.WHITE);
         progress.setReachedBarColor(Color.WHITE);
@@ -196,10 +206,9 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
         loading = (RotateLoading) findViewById(R.id.loading);
         tv_point = (TextView) findViewById(R.id.tv_point);
         layout_point_container = findViewById(R.id.layout_point_container);
-        layout_point_container.setVisibility(View.VISIBLE);
+
         loading.setLoadingColor(Color.WHITE);
         loading.start();
-        tv_point.setText("点击对方头像进行文件接受");
         progress.setMax(100);
 
         findViewById(R.id.back).setOnClickListener(new View.OnClickListener() {
@@ -226,48 +235,10 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
         });
 
         handler = new ReceiveActivityHandler(ReceiveActivity.this);
+    }
 
-        receiveFormComputer = (FloatingActionButton) findViewById(R.id.action_to_computer);
-        receiveFormComputer.setIcon(R.drawable.icon_pc);
-        receiveFormComputer.setColorNormal(getResources().getColor(R.color.button_normal));
-        receiveFormComputer.setColorPressed(getResources().getColor(R.color.button_pressed));
-        receiveFormComputer.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(ReceiveActivity.this);
-                builder.setTitle("请选择文件接收模式");
-                LayoutInflater inflater = LayoutInflater.from(ReceiveActivity.this);
-                View view = inflater.inflate(R.layout.chose_to_computer_dialog, null);
-                builder.setView(view);
-                final AlertDialog alertDialog = builder.create();
-                view.findViewById(R.id.have).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (alertDialog != null && alertDialog.isShowing()) {
-                            alertDialog.dismiss();
-                        }
-                        Intent intent = new Intent(ReceiveActivity.this, CaptureActivity.class);
-                        intent.putExtra("type", CaptureActivity.TYPE_INTENT_RECEIVE);
-                        startActivity(intent);
-                        finish();
-                    }
-                });
-
-                view.findViewById(R.id.no).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (alertDialog != null && alertDialog.isShowing()) {
-                            alertDialog.dismiss();
-                        }
-                        Intent intent = new Intent(ReceiveActivity.this, FtpManagerActivity.class);
-                        startActivity(intent);
-                        finish();
-                    }
-                });
-
-                alertDialog.show();
-            }
-        });
+    private void showTransferLoading() {
+        layout_point_container.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -285,39 +256,22 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
         });
     }
 
-
     @Override
-    public void onRadarItemClick(final int position) {
-        if(!isConnect) {
-            tv_point.setText("正在连接");
-            if (info == null) {
-                createConnect((peers.get(position)).deviceAddress);
-            } else {
-                Toast.makeText(ReceiveActivity.this, "设备已连接,正在启用接受文件", Toast.LENGTH_SHORT).show();
-            }
-        }else{
-            Toast.makeText(ReceiveActivity.this,"已经连接至某台设备",Toast.LENGTH_LONG).show();
-        }
-
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(mReceiver, mFilter);
+        showTransferLoading();
     }
-
 
     @Override
     protected void onPause() {
-        unregisterReceiver(mReceiver);
         super.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-        registerReceiver(mReceiver, mFilter);
-        super.onResume();
+        unregisterReceiver(mReceiver);
     }
 
     @Override
     protected void onDestroy() {
-        mManager.cancelConnect(mChannel, null);
-        mManager.removeGroup(mChannel, null);
+        disconnect();
         super.onDestroy();
     }
 
@@ -360,5 +314,12 @@ public class ReceiveActivity extends AppCompatActivity implements RadarViewGroup
             builder.show();
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void onSelfDeviceAvailable(WifiP2pDevice wifiP2pDevice) {
+        this.deviceSelf = wifiP2pDevice;
+        Log.i("#####", "接收端 自己的Name:" + deviceSelf.deviceName);
+        Log.i("#####", "接收端 自己的Address:" + deviceSelf.deviceAddress);
     }
 }

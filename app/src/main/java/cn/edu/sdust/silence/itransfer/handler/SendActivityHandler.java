@@ -5,9 +5,6 @@ import android.os.Message;
 
 import cn.edu.sdust.silence.itransfer.activity.SendActivity;
 
-/**
- * Created by feiqishi on 2016/5/16.
- */
 public class SendActivityHandler extends Handler {
 
     private SendActivity activity;

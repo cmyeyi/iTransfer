@@ -73,7 +73,7 @@ public class CaptureActivityHandler extends Handler {
                 state = State.SUCCESS;
                 Bundle bundle = message.getData();
 
-                activity.handleDecode((Result) message.obj, bundle);
+                activity.handleQRCode((Result) message.obj, bundle);
                 break;
             case R.id.decode_failed:
                 // We're decoding as fast as possible, so when one decode fails,

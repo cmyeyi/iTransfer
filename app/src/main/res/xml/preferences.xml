@@ -25,10 +25,6 @@ along with SwiFTP.  If not, see <http://www.gnu.org/licenses/>.
         android:key="running_switch"
         android:summary="@string/running_summary_stopped"
         android:title="@string/running_label" />
-    <Preference
-        android:key="market_version"
-        android:summary="@string/market_version_summary"
-        android:title="@string/market_version_label" />
 
     <PreferenceCategory
         android:key="settings"

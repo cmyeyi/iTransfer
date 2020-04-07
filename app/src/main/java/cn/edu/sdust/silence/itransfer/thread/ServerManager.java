@@ -13,8 +13,6 @@ import cn.edu.sdust.silence.itransfer.handler.SendActivityHandler;
 
 /**
  * 发送文件子线程管理线程
- *
- * Created by feiqishi on 2016/5/15.
  */
 public class ServerManager extends Thread {
 

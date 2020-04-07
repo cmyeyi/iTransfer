@@ -4,10 +4,6 @@ import android.os.Handler;
 import android.os.Message;
 import cn.edu.sdust.silence.itransfer.activity.ReceiveActivity;
 
-
-/**
- * Created by feiqishi on 2016/5/8.
- */
 public class ReceiveActivityHandler extends Handler {
 
     public static int TYPE_PROCESS;

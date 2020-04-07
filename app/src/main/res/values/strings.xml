@@ -1,21 +1,14 @@
 <resources>
-    <string name="app_name">爱传</string>
+    <string name="app_name">FileTransfer</string>
     <string name="title_activity_ftp_manager">FtpManagerActivity</string>
     <string name="title_activity_receive_from_computer">ReceiveFromComputerActivity</string>
     <string name="title_activity_send_to_computer">SendToComputerActivity</string>
 
     <!-- capture activity-->
-    <string name="activity_captere_ip">网址：itransfer.coselding.cn</string>
-    <string name="activity_capture_text_tip">扫码失败？方式二</string>
     <string name="activity_capture_text_tip2">请扫描二维码进行文件传输</string>
 
     <!-- chose file activity-->
     <string name="activity_chose_file">请选择文件</string>
-
-    <!-- ftp manager activity-->
-    <string name="activity_ftp_manager_tip1">1, 将手机和电脑置于同一局域网下</string>
-    <string name="activity_ftp_manager_tip2">2, 打开文件管理器</string>
-    <string name="activity_ftp_manager_tip3">3,在地址栏中输入</string>
 
     <!-- main activity-->
     <string name="activity_main_send">发送文件</string>
@@ -26,15 +19,7 @@
     <string name="activity_receive_from_computer_download">下载文件</string>
 
     <!-- scan layout-->
-    <string name="scan_tip">请点击对方头像进行文件传输</string>
-
-    <!-- chose to computer dialog layout-->
-    <string name="dialog_chose_have">有网传输</string>
-    <string name="dialog_chose_no">局域网传输</string>
-
-    <!-- receive file dialog-->
-    <string name="dialog_receive_file_fileCode">请输入文件ID</string>
-    <string name="dialog_receive_file_password">请输入校验码</string>
+    <string name="scan_tip">请扫描二维码进行文件传输</string>
 
     <!-- rename file dialog-->
     <string name="dialog_rename_file">请输入新的文件名</string>
@@ -43,17 +28,8 @@
 
 
     <string name="swiftp_name">FTP Server</string>
-    <string name="swiftp_name_free">FTP Server (Free)</string>
-    <string name="swiftp_name_demo">FTP Server (Demo)</string>
     <string name="running_label">FTP Server</string>
     <string name="running_summary_stopped">Toggle the state of the ftp server</string>
-    <string name="running_summary_started">at %s</string>
-    <string name="running_summary_failed">Failed to start the FTP server, not connected to the local network (wifi or ethernet)?</string>
-    <string name="market_version_label">Market version</string>
-    <string name="market_version_summary">
-        This is the FTP Server Demo version.
-        Support development by getting the FTP Server from the android market.
-        Click here to go to the market.</string>
     <string name="settings_label">Settings</string>
     <string name="user_label">User</string>
     <string name="loginsettings_label">Login settings...</string>

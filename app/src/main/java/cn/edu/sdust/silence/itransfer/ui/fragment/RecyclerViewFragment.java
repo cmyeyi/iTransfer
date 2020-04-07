@@ -26,7 +26,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import cn.edu.sdust.silence.itransfer.R;
-import cn.edu.sdust.silence.itransfer.activity.ReceiveFromComputerActivity;
 import cn.edu.sdust.silence.itransfer.ui.TestRecyclerViewAdapter;
 import cn.edu.sdust.silence.itransfer.ui.file.EventHandler;
 import cn.edu.sdust.silence.itransfer.ui.file.FileManager;

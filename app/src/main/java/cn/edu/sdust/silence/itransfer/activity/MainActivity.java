@@ -34,10 +34,6 @@ import cn.edu.sdust.silence.itransfer.ui.actionbutton.FloatingActionButton;
 import cn.edu.sdust.silence.itransfer.ui.actionbutton.FloatingActionsMenu;
 import cn.edu.sdust.silence.itransfer.ui.fragment.RecyclerViewFragment;
 
-/**
- * 主界面
- * create by shifeiqi
- */
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     private MaterialViewPager mViewPager;
@@ -152,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             public CharSequence getPageTitle(int position) {
                 switch (position % 2) {
                     case 0:
-                        return "历史记录";
+                        return "接收记录";
                     case 1:
                         return "文件管理";
                 }
@@ -185,7 +181,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         sendBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(checkPermission()) {
+                if (checkPermission()) {
                     Intent intent = new Intent(MainActivity.this, ChoseFileActivity.class);
                     startActivityForResult(intent, 1);
                 }
@@ -195,9 +191,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         receiveBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(checkPermission()) {
-                    Intent intent = new Intent(MainActivity.this, ReceiveActivity.class);
-                    startActivityForResult(intent, 1);
+                if (checkPermission()) {
+//                    Intent intent = new Intent(MainActivity.this, ReceiveActivity.class);
+//                    startActivityForResult(intent, 1);
+                    Intent intent = new Intent(MainActivity.this, CaptureActivity.class);
+                    startActivity(intent);
                 }
             }
         });
@@ -274,6 +272,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        recyclerViewHistoryFile.reUpdateCurrentDir();
+    }
+
+    @Override
     protected void onDestroy() {
         closeWifi();
         super.onDestroy();
@@ -299,8 +303,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     public boolean checkPermission() {
-        if (!hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) || !hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE,}, CODE_REQ_PERMISSIONS);
+        if (!hasPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) ||
+                !hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE) ||
+                !hasPermission(Manifest.permission.CAMERA)) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA}, CODE_REQ_PERMISSIONS);
             return false;
         }
         return true;

@@ -16,8 +16,6 @@ import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
 
 /**
  * 接收文件线程
- * <p/>
- * Created by feiqishi on 2016/5/5.
  */
 public class DataReceiveThread2 extends Thread {
 
@@ -88,7 +86,6 @@ public class DataReceiveThread2 extends Thread {
     public File getClientFileName(InputStream is) throws Exception {
         byte[] buf = new byte[1024];
         int len = 0;
-
         len = is.read(buf); // 获取文件名
         fileName = new String(buf, 0, len);
 
@@ -98,7 +95,8 @@ public class DataReceiveThread2 extends Thread {
         String ext = fileName.substring(fileName.indexOf("."));
         for (int i = 1; !file.createNewFile(); i++) {
             file = new File(Environment.getExternalStorageDirectory() + "/iTransfer/files/" + name + "(" + i + ")" + ext);
-        }
+         }
+
         writeOutInfo(socket, "FileLengthSendNow");
         return file;
     }
@@ -123,6 +121,9 @@ public class DataReceiveThread2 extends Thread {
         managerHandler.sendMessage(msg);
     }
 
+    /**
+     * 发送结束信息
+     */
     private void sendFinishMessage() {
         Message msg = new Message();
         msg.what = ReceiveManager.FINISH;

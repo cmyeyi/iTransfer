@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cn.edu.sdust.silence.itransfer.qrcode.camera.open;
+package cn.edu.sdust.silence.itransfer.qrcode.camera;
 
 import android.hardware.Camera;
 import android.util.Log;

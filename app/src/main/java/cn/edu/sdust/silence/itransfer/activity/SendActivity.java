@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.net.wifi.WpsInfo;
@@ -17,11 +18,10 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,22 +32,15 @@ import java.util.Map;
 
 import cn.edu.sdust.silence.itransfer.R;
 import cn.edu.sdust.silence.itransfer.handler.SendActivityHandler;
+import cn.edu.sdust.silence.itransfer.qrcode.utils.ZXingUtil;
+import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
 import cn.edu.sdust.silence.itransfer.thread.ServerManager;
 import cn.edu.sdust.silence.itransfer.thread.ServerManager2;
-import cn.edu.sdust.silence.itransfer.ui.actionbutton.FloatingActionButton;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
-import cn.edu.sdust.silence.itransfer.ui.scan.been.Info;
-import cn.edu.sdust.silence.itransfer.ui.scan.custom.RadarViewGroup;
 
-/**
- * create by shifeiqi
- */
-public class SendActivity extends Activity implements RadarViewGroup.IRadarClickListener {
-
-    private RadarViewGroup radarViewGroup;
-    private SparseArray<Info> mDatas = new SparseArray<>();
+public class SendActivity extends Activity implements DirectActionListener {
 
     //view
     private NumberProgressBar progress;
@@ -60,20 +53,19 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
 
     private IntentFilter mFilter;
     private BroadcastReceiver mReceiver;
-    private WifiP2pManager mManager;
+    private WifiP2pManager mWifiP2pManager;
     private WifiP2pManager.Channel mChannel;
-    private WifiP2pInfo info;
+    private WifiP2pInfo mWifiInfo;
     private String filePath;
-    private boolean isConnectIp = false;
+    private boolean isConnectClient = false;
     private SendActivityHandler sendActivityHandler;
-
+    private ImageView qrcodeView;
 
     //设备列表
     private List<WifiP2pDevice> peers = new ArrayList();
     private Map<String, Long> map = new HashMap<>();
-
-    private FloatingActionButton sendToComputerBtn;
     private ImageButton back;
+    private WifiP2pDevice deviceSelf;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,7 +75,7 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
         getFilePath();
         initIntentFilter();
         initWifiP2p();
-        DiscoverPeers();
+        discoverPeers();
     }
 
     private void getFilePath() {
@@ -114,76 +106,76 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
     }
 
     private void initWifiP2p() {
-        mManager = (WifiP2pManager) getSystemService(WIFI_P2P_SERVICE);
-        mChannel = mManager.initialize(this, Looper.myLooper(), null);
+        mWifiP2pManager = (WifiP2pManager) getSystemService(WIFI_P2P_SERVICE);
+        mChannel = mWifiP2pManager.initialize(this, Looper.myLooper(), new WifiP2pManager.ChannelListener(){
 
+            @Override
+            public void onChannelDisconnected() {
+                Log.e("#####","发送端，###########onChannelDisconnected");
+            }
+        });
         WifiP2pManager.PeerListListener mPeerListListener = new WifiP2pManager.PeerListListener() {
             @Override
             public void onPeersAvailable(WifiP2pDeviceList peerList) {
                 peers.clear();
                 peers.addAll(peerList.getDeviceList());
-
-                mDatas.clear();
+                Log.e("#####", "onPeersAvailable,peers size:"+peers.size());
                 for (int i = 0; i < peers.size(); i++) {
-                    WifiP2pDevice d = peers.get(i);
-                    Info info = new Info();
-                    info.setName(d.deviceName);
-                    info.setPortraitId(R.drawable.icon_receice);
-                    info.setAge(((int) Math.random() * 25 + 16) + "岁");
-                    info.setSex(true);
-
-                    if (map.keySet().contains(d.deviceName)) {
-                        info.setDistance(map.get(d.deviceName));
-                    } else {
-                        long dis = Math.round((Math.random() * 10) * 100) / 100;
-                        map.put(d.deviceName, dis);
-                        info.setDistance(dis);
-                    }
-
-                    mDatas.put(i, info);
+                    WifiP2pDevice device = peers.get(i);
+                    Log.e("#####", "#####onPeersAvailable#####"
+                            +"\ndeviceName:"+device.deviceName
+                            +"\ndeviceAddress:"+device.deviceAddress
+                            +"\nisGroupOwner:"+device.isGroupOwner());
                 }
-                radarViewGroup.setDatas(mDatas);
             }
         };
 
         WifiP2pManager.ConnectionInfoListener mInfoListener = new WifiP2pManager.ConnectionInfoListener() {
             @Override
-            public void onConnectionInfoAvailable(WifiP2pInfo minfo) {
-                tv_point.setText("连接成功，正在准备数据");
-                info = minfo;
-                if (info.groupFormed && info.isGroupOwner && !isConnectIp) {
-                    ServerManager manager = new ServerManager(sendActivityHandler, filePath);
-                    manager.start();
-                    isConnectIp = true;
-                    Log.i("xyz", "send create sucess");
-                } else if (info.groupFormed && !info.isGroupOwner && !isConnectIp) {
-                    ServerManager2 server = new ServerManager2(sendActivityHandler, info.groupOwnerAddress.getHostAddress(), filePath);
-                    server.start();
-                    isConnectIp = true;
-                    Log.i("xyz", "send create sucess");
+            public void onConnectionInfoAvailable(WifiP2pInfo availableInfo) {
+                showTransferLoading();
+                mWifiInfo = availableInfo;
+                tv_point.setText("发送端，连接成功，准备发送数据");
+                Log.i("#####", "发送端，#onConnectionInfoAvailable#" + "，isOwner=" + mWifiInfo.isGroupOwner + ",isConnectClient=" + isConnectClient);
+                Log.i("#####", "发送端，groupFormed：" + mWifiInfo.groupFormed);
+                Log.i("#####", "发送端 isConnectClient:" + isConnectClient);
+                if (mWifiInfo.groupFormed && !isConnectClient) {
+                    Log.i("#####", "发送端 isGroupOwner:" + mWifiInfo.isGroupOwner);
+                    if (mWifiInfo.isGroupOwner) {
+                        ServerManager manager = new ServerManager(sendActivityHandler, filePath);
+                        manager.start();
+                    } else {
+                        ServerManager2 server = new ServerManager2(sendActivityHandler, mWifiInfo.groupOwnerAddress.getHostAddress(), filePath);
+                        server.start();
+                    }
+                    isConnectClient = true;
+                } else {
+                    //TODO
+                    Log.w("#####", "发送端，groupFormed false");
                 }
+
             }
         };
-
-        mReceiver = new WifiP2PBroadcastReceiver(mManager, mChannel, this, mPeerListListener, mInfoListener);
+        mReceiver = new WifiP2PBroadcastReceiver(mWifiP2pManager, mChannel, this, mPeerListListener, mInfoListener,this);
     }
 
     private void createConnect(String address) {
         Log.d("#####", "sender createConnect," + address);
+
         final WifiP2pConfig config = new WifiP2pConfig();
         config.deviceAddress = address;
         config.groupOwnerIntent = 0;
         config.wps.setup = WpsInfo.PBC;
 
-        mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
+        mWifiP2pManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
 
             @Override
             public void onSuccess() {
-                if (info != null) {
+                if (mWifiInfo != null) {
                     tv_point.setText("连接成功，正在准备数据");
                     Log.d("#####", "createConnect onSuccess" +
-                            ",isGroupOwner " + info.isGroupOwner +
-                            ",createConnect groupOwner ip " + info.groupOwnerAddress.getHostAddress());
+                            ",isGroupOwner " + mWifiInfo.isGroupOwner +
+                            ",createConnect groupOwner ip " + mWifiInfo.groupOwnerAddress.getHostAddress());
                 }
             }
 
@@ -195,8 +187,7 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
     }
 
     private void initView() {
-        radarViewGroup = (RadarViewGroup) findViewById(R.id.radar);
-        radarViewGroup.setiRadarClickListener(this);
+        qrcodeView = findViewById(R.id.id_qrcode_view);
         progress = (NumberProgressBar) findViewById(R.id.progress);
         progress.setProgressTextColor(Color.WHITE);
         progress.setReachedBarColor(Color.WHITE);
@@ -233,58 +224,19 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
         layout_point_container.setVisibility(View.VISIBLE);
         loading.setLoadingColor(Color.WHITE);
         loading.start();
-        tv_point.setText("点击对方头像进行文件发送");
-
         progress.setMax(100);
 
-        sendToComputerBtn = (FloatingActionButton) findViewById(R.id.action_to_computer);
-        sendToComputerBtn.setIcon(R.drawable.icon_pc);
-        sendToComputerBtn.setColorNormalResId(R.color.button_normal);
-        sendToComputerBtn.setColorPressedResId(R.color.button_pressed);
-        sendToComputerBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(SendActivity.this);
-                builder.setTitle("请选择文件发送模式");
-                LayoutInflater inflater = LayoutInflater.from(SendActivity.this);
-                View view = inflater.inflate(R.layout.chose_to_computer_dialog, null);
-                builder.setView(view);
-                final AlertDialog alertDialog= builder.create();
-                view.findViewById(R.id.have).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (alertDialog != null && alertDialog.isShowing()) {
-                            alertDialog.dismiss();
-                        }
-                        Intent intent = new Intent(SendActivity.this, SendToComputerActivity.class);
-                        intent.putExtra("path", filePath);
-                        startActivity(intent);
-                        finish();
-                    }
-                });
+    }
 
-                view.findViewById(R.id.no).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (alertDialog != null && alertDialog.isShowing()) {
-                            alertDialog.dismiss();
-                        }
-                        Intent intent = new Intent(SendActivity.this, FtpManagerActivity.class);
-                        startActivity(intent);
-                        finish();
-                    }
-                });
-
-                alertDialog.show();
-            }
-        });
+    private void showTransferLoading() {
+        layout_point_container.setVisibility(View.VISIBLE);
     }
 
     /**
      * 开启发现节点
      */
-    private void DiscoverPeers() {
-        mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
+    private void discoverPeers() {
+        mWifiP2pManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
             }
@@ -337,21 +289,6 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
     }
 
     @Override
-    public void onRadarItemClick(final int position) {
-        if (!isConnectIp) {
-            tv_point.setText("正在连接");
-            if (info == null) {
-                createConnect(peers.get(position).deviceAddress);
-            } else {
-                Toast.makeText(SendActivity.this, "设备已连接，正在启用发送文件", Toast.LENGTH_LONG).show();
-            }
-        } else {
-            Toast.makeText(SendActivity.this, "已经连接至某一台设备", Toast.LENGTH_SHORT).show();
-        }
-
-    }
-
-    @Override
     protected void onPause() {
         unregisterReceiver(mReceiver);
         super.onPause();
@@ -365,8 +302,43 @@ public class SendActivity extends Activity implements RadarViewGroup.IRadarClick
 
     @Override
     protected void onDestroy() {
-        mManager.cancelConnect(mChannel, null);
-        mManager.removeGroup(mChannel, null);
+        disconnect();
         super.onDestroy();
+    }
+
+    private void disconnect() {
+        mWifiP2pManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.e("#####", "cancelConnect，onSuccess，切断链接，成功");
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.e("#####", "cancelConnect，onFailure，切断链接，失败");
+            }
+        });
+
+        mWifiP2pManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.e("#####", "removeGroup，onSuccess");
+            }
+
+            @Override
+            public void onFailure(int i) {
+                Log.e("#####", "removeGroup，onFailure,i:"+i);
+            }
+        });
+    }
+
+    @Override
+    public void onSelfDeviceAvailable(WifiP2pDevice wifiP2pDevice) {
+        this.deviceSelf = wifiP2pDevice;
+        Log.i("#####", "发送端 自己的Name:" + deviceSelf.deviceName);
+        Log.i("#####", "发送端 自己的Address:" + deviceSelf.deviceAddress);
+
+        Bitmap bitmap = ZXingUtil.createQRCode(deviceSelf.deviceAddress,150,150);
+        qrcodeView.setImageBitmap(bitmap);
     }
 }

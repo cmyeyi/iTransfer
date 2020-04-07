@@ -1,13 +1,12 @@
 apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+    compileSdkVersion 29
 
     defaultConfig {
         applicationId "cn.edu.sdust.silence.itransfer"
-        minSdkVersion 14
-        targetSdkVersion 23
+        minSdkVersion 19
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
 

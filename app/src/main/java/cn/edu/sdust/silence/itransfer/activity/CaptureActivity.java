@@ -8,10 +8,8 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.AppCompatEditText;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -19,13 +17,11 @@ import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 
 import com.google.zxing.Result;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.List;
 
 import cn.edu.sdust.silence.itransfer.R;
 import cn.edu.sdust.silence.itransfer.qrcode.camera.CameraManager;
@@ -33,8 +29,6 @@ import cn.edu.sdust.silence.itransfer.qrcode.decode.DecodeThread;
 import cn.edu.sdust.silence.itransfer.qrcode.utils.BeepManager;
 import cn.edu.sdust.silence.itransfer.qrcode.utils.CaptureActivityHandler;
 import cn.edu.sdust.silence.itransfer.qrcode.utils.InactivityTimer;
-import cn.edu.sdust.silence.itransfer.web.domain.FileLog;
-import cn.edu.sdust.silence.itransfer.thread.ScanThread;
 
 public final class CaptureActivity extends Activity implements SurfaceHolder.Callback {
 
@@ -54,8 +48,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
     private Rect mCropRect = null;
     private int TYPE_INTENT;
-    private TextView text_tip;
-    private List<FileLog> fileLogs;
 
     public Handler getHandler() {
         return handler;
@@ -95,63 +87,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
             }
         });
 
-        text_tip = (TextView) findViewById(R.id.text_tip);
         TYPE_INTENT = getIntent().getIntExtra("type", 0);
-        if (TYPE_INTENT == TYPE_INTENT_SEND) {
-            text_tip.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(CaptureActivity.this);
-                    builder.setTitle("请在网页上输入以下获取文件");
-                    builder.setMessage("文件ID: " + fileLogs.get(0).getFilecode() + "\n\n" + "校验码: " + fileLogs.get(0).getPassword());
-                    builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    });
-                    builder.show();
-                }
-            });
-        } else if (TYPE_INTENT == TYPE_INTENT_RECEIVE) {
-            text_tip.setText("扫码失败？方式二！");
-            text_tip.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(CaptureActivity.this);
-                    builder.setTitle("请输入以下获取文件");
-
-                    LayoutInflater inflater = LayoutInflater.from(CaptureActivity.this);
-                    View view = inflater.inflate(R.layout.dialog_receive_file, null);
-                    final AppCompatEditText fileCode = (AppCompatEditText) view.findViewById(R.id.fileCode);
-                    final AppCompatEditText password = (AppCompatEditText) view.findViewById(R.id.password);
-                    builder.setView(view);
-                    builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Intent intent = new Intent(CaptureActivity.this, ReceiveFromComputerActivity.class);
-                            Bundle bundle = new Bundle();
-                            bundle.putInt("flag", ReceiveFromComputerActivity.TYPE_NO_SCAN);
-                            bundle.putString("fileCode", fileCode.getText().toString().trim());
-                            bundle.putString("password", password.getText().toString().trim());
-                            intent.putExtras(bundle);
-                            startActivity(intent);
-                            finish();
-                            dialog.dismiss();
-                        }
-                    });
-                    builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.dismiss();
-                        }
-                    });
-                    builder.show();
-                }
-            });
-        }
-
-        fileLogs = (List<FileLog>) getIntent().getSerializableExtra("fileLogs");
         scanPreview = (SurfaceView) findViewById(R.id.capture_preview);
         scanContainer = (RelativeLayout) findViewById(R.id.capture_container);
         scanCropView = (RelativeLayout) findViewById(R.id.capture_crop_view);
@@ -239,35 +175,12 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
     }
 
-    /**
-     * A valid barcode has been found, so give an indication of success and show
-     * the results.
-     *
-     * @param rawResult The contents of the barcode.
-     * @param bundle    The extras
-     */
-    public void handleDecode(Result rawResult, Bundle bundle) {
-        Log.i("###", "handleDecode: " + rawResult.getText());
-        inactivityTimer.onActivity();
-        beepManager.playBeepSoundAndVibrate();
-        if (TYPE_INTENT == TYPE_INTENT_SEND) {
-            String result = rawResult.getText();
-            String fileName = result.substring(result.indexOf("=", result.indexOf("&")) + 1);
-            Log.i("###", "fileName: " + fileName);
-
-            for (int i = 0; i < fileLogs.size(); i++) {
-                FileLog file = fileLogs.get(i);
-                ScanThread thread = new ScanThread("" + file.getFilecode(), file.getPassword(), fileName, handler);
-                thread.start();
-            }
-
-        } else if (TYPE_INTENT == TYPE_INTENT_RECEIVE) {
-            Log.i("###", "result: " + rawResult.getText());
-            bundle.putString("result", rawResult.getText());
-            bundle.putInt("flag", ReceiveFromComputerActivity.TYPE_SCAN);
-            startActivity(new Intent(CaptureActivity.this, ReceiveFromComputerActivity.class).putExtras(bundle));
-            finish();
-        }
+    public void handleQRCode(Result rawResult, Bundle bundle) {
+        Log.i("###", "result: " + rawResult.getText() + ",bundle:" + bundle.toString());
+        Intent intent = new Intent(CaptureActivity.this, ReceiveActivity.class);
+        intent.putExtra("address", rawResult.getText());
+        startActivity(intent);
+        finish();
     }
 
     private void initCamera(SurfaceHolder surfaceHolder) {

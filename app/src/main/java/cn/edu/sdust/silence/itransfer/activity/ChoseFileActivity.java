@@ -11,10 +11,6 @@ import android.view.View;
 import cn.edu.sdust.silence.itransfer.R;
 import cn.edu.sdust.silence.itransfer.ui.fragment.ChoseFileRecyclerViewFragment;
 
-/**
- *
- * create by shifeiqi
- */
 public class ChoseFileActivity extends FragmentActivity {
 
     private ChoseFileRecyclerViewFragment recyclerView;

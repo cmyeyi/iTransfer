@@ -27,8 +27,6 @@ import android.view.SurfaceHolder;
 
 import java.io.IOException;
 
-import cn.edu.sdust.silence.itransfer.qrcode.camera.open.OpenCameraInterface;
-
 /**
  * This object wraps the Camera service object and expects to be the only one
  * talking to it. The implementation encapsulates the steps needed to take

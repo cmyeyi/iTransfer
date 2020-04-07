@@ -17,8 +17,6 @@ import cn.edu.sdust.silence.itransfer.handler.SendActivityHandler;
 
 /**
  * 发送文件线程
- *
- * Created by feiqishi on 2016/5/5.
  */
 public class DataServerThread2 extends Thread {
 
