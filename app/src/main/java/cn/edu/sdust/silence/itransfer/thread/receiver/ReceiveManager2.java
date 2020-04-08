@@ -14,7 +14,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
-import cn.edu.sdust.silence.itransfer.thread.Constant;
+import cn.edu.sdust.silence.itransfer.common.Constant;
 
 /**
  * 接收文件子线程管理线程

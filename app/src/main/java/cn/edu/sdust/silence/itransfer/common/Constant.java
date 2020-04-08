@@ -1,4 +1,4 @@
-package cn.edu.sdust.silence.itransfer.thread;
+package cn.edu.sdust.silence.itransfer.common;
 
 /**
  * @Description: <p>

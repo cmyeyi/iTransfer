@@ -14,7 +14,7 @@ import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.activity.SendActivity;
 import cn.edu.sdust.silence.itransfer.handler.SendActivityHandler;
-import cn.edu.sdust.silence.itransfer.thread.Constant;
+import cn.edu.sdust.silence.itransfer.common.Constant;
 
 /**
  * 发送文件子线程管理线程
