@@ -28,7 +28,6 @@ import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveActivityHandler;
 import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
 import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveManager;
-import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveManager2;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
 
@@ -101,7 +100,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
                 for (int i = 0; i < peers.size(); i++) {
                     WifiP2pDevice d = peers.get(i);
                     Log.e("#####","onPeersAvailable deviceAddress:"+d.deviceAddress);
-                    createConnect(connectAddress);
+//                    createConnect(connectAddress);
                 }
             }
         };
@@ -116,13 +115,13 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
                 Log.i("#####", "接收端，groupFormed:" + wifiInfo.groupFormed);
                 Log.i("#####", "接收端，isConnectServer:" + isConnectServer);
                 if (wifiInfo.groupFormed && !isConnectServer) {
+                    ReceiveManager manager = null;
                     if (wifiInfo.isGroupOwner) {
-                        ReceiveManager manager = new ReceiveManager(handler);
-                        manager.start();
+                        manager = new ReceiveManager(handler,null);
                     } else {
-                        ReceiveManager2 manager = new ReceiveManager2(handler, wifiInfo.groupOwnerAddress.getHostAddress());
-                        manager.start();
+                        manager = new ReceiveManager(handler, wifiInfo.groupOwnerAddress.getHostAddress());
                     }
+                    manager.start();
                     isConnectServer = true;
                 } else {
                     //TODO

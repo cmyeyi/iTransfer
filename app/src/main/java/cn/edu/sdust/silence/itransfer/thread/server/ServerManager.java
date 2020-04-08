@@ -3,12 +3,14 @@ package cn.edu.sdust.silence.itransfer.thread.server;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.text.TextUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -19,7 +21,7 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  * 发送文件子线程管理线程
  */
 public class ServerManager extends Thread {
-
+    private String ip;
     private ServerSocket serverSocket;
     private Socket socket;
     private long length;
@@ -28,14 +30,18 @@ public class ServerManager extends Thread {
     private Handler managerHandler;
     private SendActivityHandler sendActivityHandler;
 
-    public ServerManager(SendActivityHandler sendActivityHandler, String filePath) {
+
+    public ServerManager(SendActivityHandler sendActivityHandler, String ip, String filePath) {
         this.sendActivityHandler = sendActivityHandler;
         this.filePath = filePath;
-
-        try {
-            serverSocket = new ServerSocket(Constant.PORT);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (!TextUtils.isEmpty(ip)) {
+            this.ip = ip;
+        } else {
+            try {
+                serverSocket = new ServerSocket(Constant.PORT);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -47,61 +53,68 @@ public class ServerManager extends Thread {
             public void handleMessage(Message msg) {
 
                 if (msg.what == Constant.RETRY) {
-                    try {
-                        socket = serverSocket.accept();
-                        DateServerThread thread = new DateServerThread();
-                        thread.start();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    startServerThread();
                 }
                 if (msg.what == Constant.FINISH) {
-                    try {
-                        serverSocket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    closeServerThread();
                     managerHandler.getLooper().quit();
                     Thread.interrupted();
                 }
             }
         };
 
+        startServerThread();
+        Looper.loop();
+    }
+
+    private void closeServerThread() {
         if(serverSocket != null) {
             try {
-                socket = serverSocket.accept();
-                if(socket != null) {
-                    DateServerThread thread = new DateServerThread();
-                    thread.start();
-                    return;
-                }
+                serverSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
 
-        Looper.loop();
+    private void startServerThread() {
+        DataServerThread thread = new DataServerThread();
+        if (serverSocket != null) {
+            try {
+                socket = serverSocket.accept();
+                if (socket != null) {
+                    thread.start();
+                } else {
+                    thread.sendErrorMessage();
+                }
+            } catch (IOException e) {
+                thread.sendErrorMessage();
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                socket = new Socket();
+                socket.connect((new InetSocketAddress(ip, Constant.PORT)),1000);
+                thread.start();
+            } catch (IOException e) {
+                thread.sendErrorMessage();
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     public void destroy() {
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        closeServerThread();
         super.destroy();
     }
 
 
-    class DateServerThread extends Thread {
+    class DataServerThread extends Thread {
 
         @Override
         public void run() {
-
             try {
-
-
                 OutputStream os = socket.getOutputStream();
                 InputStream is = socket.getInputStream();
                 File file = new File(filePath);

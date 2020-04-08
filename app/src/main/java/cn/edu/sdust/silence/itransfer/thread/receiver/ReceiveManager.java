@@ -4,6 +4,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
@@ -11,6 +12,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -21,6 +23,7 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  */
 public class ReceiveManager extends Thread {
 
+    private String ip;
     private ServerSocket serverSocket;
     private Socket socket;
     private String fileName;
@@ -28,12 +31,16 @@ public class ReceiveManager extends Thread {
     private Handler managerHandler;
     private ReceiveActivityHandler receiveActivityHandler;
 
-    public ReceiveManager(ReceiveActivityHandler handler) {
+    public ReceiveManager(ReceiveActivityHandler handler, String ip) {
         this.receiveActivityHandler = handler;
-        try {
-            serverSocket = new ServerSocket(Constant.PORT);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(!TextUtils.isEmpty(ip)) {
+            this.ip = ip;
+        } else {
+            try {
+                serverSocket = new ServerSocket(Constant.PORT);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -45,47 +52,58 @@ public class ReceiveManager extends Thread {
 
             public void handleMessage(Message msg) {
 
-                if(msg.what == Constant.RETRY){
-                    try {
-                        socket = serverSocket.accept();
-                        DataReceiveThread thread = new DataReceiveThread();
-                        thread.start();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                if (msg.what == Constant.RETRY) {
+                    startDataReceiveThread();
                 }
                 if (msg.what == Constant.FINISH) {
-                    try {
-                        serverSocket.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    closeServerSocket();
                     managerHandler.getLooper().quit();
                     Thread.interrupted();
                 }
             }
         };
 
-        if(serverSocket != null) {
+        startDataReceiveThread();
+        Looper.loop();
+    }
+
+    private void closeServerSocket() {
+        if (serverSocket != null) {
             try {
-                socket = serverSocket.accept();
-                DataReceiveThread thread = new DataReceiveThread();
-                thread.start();
+                serverSocket.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
-        Looper.loop();
     }
+
+    private void startDataReceiveThread() {
+        createSocket();
+        DataReceiveThread thread = new DataReceiveThread();
+        thread.start();
+    }
+
+    private void createSocket() {
+        if (serverSocket != null) {
+            try {
+                socket = serverSocket.accept();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                socket = new Socket();
+                socket.connect((new InetSocketAddress(ip, Constant.PORT)), 1000);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 
     @Override
     public void destroy() {
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        closeServerSocket();
         super.destroy();
     }
 
