@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="empty_array" />
 
     <declare-styleable name="NumberProgressBar">
         <attr name="progress_current" format="integer" />
