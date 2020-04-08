@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cn.edu.sdust.silence.itransfer.R;
-import cn.edu.sdust.silence.itransfer.handler.ReceiveActivityHandler;
+import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveActivityHandler;
 import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
 import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveManager;

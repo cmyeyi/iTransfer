@@ -1,4 +1,4 @@
-package cn.edu.sdust.silence.itransfer.handler;
+package cn.edu.sdust.silence.itransfer.thread.server;
 
 import android.os.Handler;
 import android.os.Message;

@@ -13,7 +13,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.activity.SendActivity;
-import cn.edu.sdust.silence.itransfer.handler.SendActivityHandler;
 import cn.edu.sdust.silence.itransfer.common.Constant;
 
 /**

@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import cn.edu.sdust.silence.itransfer.R;
-import cn.edu.sdust.silence.itransfer.handler.SendActivityHandler;
+import cn.edu.sdust.silence.itransfer.thread.server.SendActivityHandler;
 import cn.edu.sdust.silence.itransfer.qrcode.utils.ZXingUtil;
 import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;

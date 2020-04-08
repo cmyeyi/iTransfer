@@ -3,7 +3,6 @@ package cn.edu.sdust.silence.itransfer.thread.server;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,7 +13,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.activity.SendActivity;
-import cn.edu.sdust.silence.itransfer.handler.SendActivityHandler;
 import cn.edu.sdust.silence.itransfer.common.Constant;
 
 /**
