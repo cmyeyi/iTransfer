@@ -4,6 +4,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -20,20 +21,16 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  */
 public class ReceiveManager2 extends Thread {
 
+    private String ip;
     private Socket socket;
     private String fileName;
-    private long length; //文件大小
-    public static int RETRY = 01;
-    public static int FINISH = 02;
+    private long length;
     private Handler managerHandler;
     private ReceiveActivityHandler receiveActivityHandler;
-    private String ip;
 
-    public ReceiveManager2(ReceiveActivityHandler receiveActivityHandler, String ip) {
-        this.receiveActivityHandler = receiveActivityHandler;
+    public ReceiveManager2(ReceiveActivityHandler handler, String ip) {
+        this.receiveActivityHandler = handler;
         this.ip = ip;
-        fileName = "";
-        length = 0;
     }
 
     @Override
@@ -44,10 +41,10 @@ public class ReceiveManager2 extends Thread {
 
             public void handleMessage(Message msg) {
 
-                if (msg.what == RETRY) {
+                if (msg.what == Constant.RETRY) {
                     DataReceiveThread thread = new DataReceiveThread();
                     thread.start();
-                } else if (msg.what == FINISH) {
+                } else if (msg.what == Constant.FINISH) {
                     managerHandler.getLooper().quit();
                     Thread.interrupted();
                 }
@@ -63,23 +60,33 @@ public class ReceiveManager2 extends Thread {
 
         @Override
         public void run() {
-            socket = new Socket();
+
             try {
+                socket = new Socket();
                 socket.connect((new InetSocketAddress(ip, Constant.PORT)), 1000);
                 InputStream is = socket.getInputStream();
 
                 File file = getClientFileName(is);
                 length = getFileLength(is);
+
                 FileOutputStream os = new FileOutputStream(file);
                 copyFile(is, os);
 
                 is.close();
                 os.close();
-                socket.close();
                 sendFinishMessage();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 sendErrorMessage();
+                Log.e("xyz", e.getMessage());
                 e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -111,8 +118,12 @@ public class ReceiveManager2 extends Thread {
 
             //如果文件存在，重命名
             File file = new File(Environment.getExternalStorageDirectory() + "/iTransfer/files/" + fileName);
-            String name = fileName.substring(0, fileName.indexOf("."));
-            String ext = fileName.substring(fileName.indexOf("."));
+            String name = fileName;
+            String ext = "";
+            if (fileName.contains(".")) {
+                name = fileName.substring(0, fileName.indexOf("."));
+                ext = fileName.substring(fileName.indexOf("."));
+            }
             for (int i = 1; !file.createNewFile(); i++) {
                 file = new File(Environment.getExternalStorageDirectory() + "/iTransfer/files/" + name + "(" + i + ")" + ext);
             }
@@ -140,7 +151,7 @@ public class ReceiveManager2 extends Thread {
          */
         private void sendErrorMessage() {
             Message msg = new Message();
-            msg.what = ReceiveManager2.RETRY;
+            msg.what = Constant.RETRY;
             managerHandler.sendMessage(msg);
         }
 
@@ -149,7 +160,7 @@ public class ReceiveManager2 extends Thread {
          */
         private void sendFinishMessage() {
             Message msg = new Message();
-            msg.what = ReceiveManager2.FINISH;
+            msg.what = Constant.FINISH;
             managerHandler.sendMessage(msg);
         }
     }

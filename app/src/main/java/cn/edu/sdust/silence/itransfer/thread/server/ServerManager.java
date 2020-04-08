@@ -20,13 +20,11 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  */
 public class ServerManager extends Thread {
 
-    public static int RETRY = 1;
-    public static int FINISH = 2;
     private ServerSocket serverSocket;
     private Socket socket;
+    private long length;
     private String filePath;
     private String fileName;
-    private long length;
     private Handler managerHandler;
     private SendActivityHandler sendActivityHandler;
 
@@ -43,14 +41,12 @@ public class ServerManager extends Thread {
 
     @Override
     public void run() {
-
-
         Looper.prepare();
         managerHandler = new Handler() {
-
+            @Override
             public void handleMessage(Message msg) {
 
-                if (msg.what == RETRY) {
+                if (msg.what == Constant.RETRY) {
                     try {
                         socket = serverSocket.accept();
                         DateServerThread thread = new DateServerThread();
@@ -59,7 +55,7 @@ public class ServerManager extends Thread {
                         e.printStackTrace();
                     }
                 }
-                if (msg.what == FINISH) {
+                if (msg.what == Constant.FINISH) {
                     try {
                         serverSocket.close();
                     } catch (IOException e) {
@@ -102,18 +98,23 @@ public class ServerManager extends Thread {
 
         @Override
         public void run() {
+
             try {
+
+
                 OutputStream os = socket.getOutputStream();
                 InputStream is = socket.getInputStream();
                 File file = new File(filePath);
 
                 fileName = file.getName();
                 os.write(fileName.getBytes());
+
                 String serverInfo = servInfoBack(is);
                 if (serverInfo.equals("FileLengthSendNow")) {
                     length = file.length();
                     os.write(("" + length).getBytes());
                 }
+
                 String serverInfo2 = servInfoBack(is);
                 if (serverInfo2.equals("FileSendNow")) {
                     FileInputStream inputStream = new FileInputStream(file);
@@ -165,13 +166,13 @@ public class ServerManager extends Thread {
 
         private void sendErrorMessage() {
             Message msg = new Message();
-            msg.what = ServerManager.RETRY;
+            msg.what = Constant.RETRY;
             managerHandler.sendMessage(msg);
         }
 
         private void sendFinishMessage() {
             Message msg = new Message();
-            msg.what = ServerManager.FINISH;
+            msg.what = Constant.FINISH;
             managerHandler.sendMessage(msg);
         }
 
@@ -182,6 +183,4 @@ public class ServerManager extends Thread {
             sendActivityHandler.sendMessage(msg);
         }
     }
-
-
 }

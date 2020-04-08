@@ -12,4 +12,6 @@ package cn.edu.sdust.silence.itransfer.common;
  */
 public class Constant {
     public final static int PORT = 2022;
+    public static int FINISH = 1;
+    public static int RETRY = 2;
 }

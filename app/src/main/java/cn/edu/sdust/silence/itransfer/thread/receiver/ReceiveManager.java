@@ -21,15 +21,12 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  */
 public class ReceiveManager extends Thread {
 
-    private ReceiveActivityHandler receiveActivityHandler;
     private ServerSocket serverSocket;
-    private Socket socket = null;
-    private Handler managerHandler;
-    private long length;
+    private Socket socket;
     private String fileName;
-
-    public static int FINISH = 1;
-    public static int RETRY = 2;
+    private long length;
+    private Handler managerHandler;
+    private ReceiveActivityHandler receiveActivityHandler;
 
     public ReceiveManager(ReceiveActivityHandler handler) {
         this.receiveActivityHandler = handler;
@@ -48,7 +45,7 @@ public class ReceiveManager extends Thread {
 
             public void handleMessage(Message msg) {
 
-                if(msg.what == RETRY){
+                if(msg.what == Constant.RETRY){
                     try {
                         socket = serverSocket.accept();
                         DataReceiveThread thread = new DataReceiveThread();
@@ -57,7 +54,7 @@ public class ReceiveManager extends Thread {
                         e.printStackTrace();
                     }
                 }
-                if (msg.what == FINISH) {
+                if (msg.what == Constant.FINISH) {
                     try {
                         serverSocket.close();
                     } catch (IOException e) {
@@ -110,7 +107,7 @@ public class ReceiveManager extends Thread {
                 os.close();
                 sendFinishMessage();
             } catch (IOException e) {
-                sendErroeMessage();
+                sendErrorMessage();
                 Log.e("xyz", e.getMessage());
                 e.printStackTrace();
             } catch (Exception e) {
@@ -152,8 +149,12 @@ public class ReceiveManager extends Thread {
 
             //如果文件存在，重命名
             File file = new File(Environment.getExternalStorageDirectory() + "/iTransfer/files/" + fileName);
-            String name = fileName.substring(0, fileName.indexOf("."));
-            String ext = fileName.substring(fileName.indexOf("."));
+            String name = fileName;
+            String ext = "";
+            if (fileName.contains(".")) {
+                name = fileName.substring(0, fileName.indexOf("."));
+                ext = fileName.substring(fileName.indexOf("."));
+            }
             for (int i = 1; !file.createNewFile(); i++) {
                 file = new File(Environment.getExternalStorageDirectory() + "/iTransfer/files/" + name + "(" + i + ")" + ext);
             }
@@ -176,9 +177,12 @@ public class ReceiveManager extends Thread {
             sockOut.write(infoStr.getBytes());
         }
 
-        private void sendErroeMessage() {
+        /**
+         * 发送错误信息
+         */
+        private void sendErrorMessage() {
             Message msg = new Message();
-            msg.what = ReceiveManager.RETRY;
+            msg.what = Constant.RETRY;
             managerHandler.sendMessage(msg);
         }
 
@@ -187,7 +191,7 @@ public class ReceiveManager extends Thread {
          */
         private void sendFinishMessage() {
             Message msg = new Message();
-            msg.what = ReceiveManager.FINISH;
+            msg.what = Constant.FINISH;
             managerHandler.sendMessage(msg);
         }
     }

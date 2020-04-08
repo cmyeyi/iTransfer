@@ -20,12 +20,10 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  */
 public class ServerManager2 extends Thread {
 
-    public static int RETRY = 1;
-    public static int FINISH = 2;
     private String ip;
     private long length;
-    private String fileName;
     private String filePath;
+    private String fileName;
     private Handler managerHandler;
     private SendActivityHandler sendActivityHandler;
 
@@ -42,10 +40,11 @@ public class ServerManager2 extends Thread {
         managerHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                if (msg.what == RETRY) {
+
+                if (msg.what == Constant.RETRY) {
                     DataServerThread server = new DataServerThread();
                     server.start();
-                } else if (msg.what == FINISH) {
+                } else if (msg.what == Constant.FINISH) {
                     managerHandler.getLooper().quit();
                     Thread.interrupted();
                 }
@@ -54,7 +53,6 @@ public class ServerManager2 extends Thread {
         DataServerThread server = new DataServerThread();
         server.start();
         Looper.loop();
-
     }
 
 
@@ -62,9 +60,7 @@ public class ServerManager2 extends Thread {
 
         @Override
         public void run() {
-
             Socket socket = new Socket();
-
             try {
                 socket.connect((new InetSocketAddress(ip, Constant.PORT)),1000);
 
@@ -90,11 +86,18 @@ public class ServerManager2 extends Thread {
 
                 is.close();
                 os.close();
-                socket.close();
                 sendFinishMessage();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 sendErrorMessage();
                 e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             super.run();
         }
@@ -125,13 +128,13 @@ public class ServerManager2 extends Thread {
 
         private void sendErrorMessage() {
             Message msg = new Message();
-            msg.what = ServerManager2.RETRY;
+            msg.what = Constant.RETRY;
             managerHandler.sendMessage(msg);
         }
 
         private void sendFinishMessage() {
             Message msg = new Message();
-            msg.what = ServerManager2.FINISH;
+            msg.what = Constant.FINISH;
             managerHandler.sendMessage(msg);
         }
 
