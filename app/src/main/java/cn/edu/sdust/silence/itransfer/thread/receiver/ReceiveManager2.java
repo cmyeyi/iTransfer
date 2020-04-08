@@ -21,6 +21,9 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  */
 public class ReceiveManager2 extends Thread {
 
+    private Socket socket;
+    private String fileName;
+    private long length; //文件大小
     public static int RETRY = 01;
     public static int FINISH = 02;
     private Handler managerHandler;
@@ -30,6 +33,8 @@ public class ReceiveManager2 extends Thread {
     public ReceiveManager2(ReceiveActivityHandler receiveActivityHandler, String ip) {
         this.receiveActivityHandler = receiveActivityHandler;
         this.ip = ip;
+        fileName = "";
+        length = 0;
     }
 
     @Override
@@ -41,7 +46,7 @@ public class ReceiveManager2 extends Thread {
             public void handleMessage(Message msg) {
 
                 if (msg.what == RETRY) {
-                    DataReceiveThread thread = new DataReceiveThread(managerHandler, receiveActivityHandler, ip);
+                    DataReceiveThread thread = new DataReceiveThread();
                     thread.start();
                 } else if (msg.what == FINISH) {
                     managerHandler.getLooper().quit();
@@ -50,27 +55,12 @@ public class ReceiveManager2 extends Thread {
             }
         };
 
-        DataReceiveThread thread = new DataReceiveThread(managerHandler, receiveActivityHandler, ip);
+        DataReceiveThread thread = new DataReceiveThread();
         thread.start();
         Looper.loop();
     }
 
-    static class DataReceiveThread extends Thread {
-
-        private Socket socket;
-        private String ip;
-        private String fileName;
-        private long length; //文件大小
-        private ReceiveActivityHandler receiveActivityHandler;
-        private Handler managerHandler;
-
-        public DataReceiveThread(Handler managerHandler, ReceiveActivityHandler receiveActivityHandler, String ip) {
-            this.ip = ip.trim();
-            fileName = "";
-            length = 0;
-            this.receiveActivityHandler = receiveActivityHandler;
-            this.managerHandler = managerHandler;
-        }
+    class DataReceiveThread extends Thread {
 
         @Override
         public void run() {

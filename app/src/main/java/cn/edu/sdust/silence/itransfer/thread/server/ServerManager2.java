@@ -21,13 +21,15 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  */
 public class ServerManager2 extends Thread {
 
+    public static int RETRY = 1;
+    public static int FINISH = 2;
     private String ip;
+    private long length;
+    private String fileName;
     private String filePath;
     private Handler managerHandler;
     private SendActivityHandler sendActivityHandler;
 
-    public static int RETRY = 1;
-    public static int FINISH = 2;
 
     public ServerManager2(SendActivityHandler sendActivityHandler, String ip, String filePath) {
         this.sendActivityHandler = sendActivityHandler;
@@ -42,7 +44,7 @@ public class ServerManager2 extends Thread {
             @Override
             public void handleMessage(Message msg) {
                 if (msg.what == RETRY) {
-                    DataServerThread server = new DataServerThread(sendActivityHandler,managerHandler, ip, filePath);
+                    DataServerThread server = new DataServerThread();
                     server.start();
                 } else if (msg.what == FINISH) {
                     managerHandler.getLooper().quit();
@@ -50,32 +52,14 @@ public class ServerManager2 extends Thread {
                 }
             }
         };
-        DataServerThread server = new DataServerThread(sendActivityHandler,managerHandler, ip, filePath);
+        DataServerThread server = new DataServerThread();
         server.start();
         Looper.loop();
 
     }
 
 
-    static class DataServerThread extends Thread {
-
-
-        private String ip;
-        private long length;
-        private String fileName;
-        private String filePath;
-
-        private Handler managerHandler;
-        private SendActivityHandler sendActivityHandler;
-
-        public DataServerThread(SendActivityHandler sendActivityHandler, Handler managerHandler, String ip, String filePath) {
-            this.sendActivityHandler = sendActivityHandler;
-            this.ip = ip;
-            this.filePath = filePath;
-            length = 0;
-
-            this.managerHandler = managerHandler;
-        }
+    class DataServerThread extends Thread {
 
         @Override
         public void run() {

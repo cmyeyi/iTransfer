@@ -26,6 +26,8 @@ public class ReceiveManager extends Thread {
     private ServerSocket serverSocket;
     private Socket socket = null;
     private Handler managerHandler;
+    private long length;
+    private String fileName;
 
     public static int FINISH = 1;
     public static int RETRY = 2;
@@ -50,11 +52,11 @@ public class ReceiveManager extends Thread {
                 if(msg.what == RETRY){
                     try {
                         socket = serverSocket.accept();
+                        DataReceiveThread thread = new DataReceiveThread();
+                        thread.start();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    DataReceiveThread thread = new DataReceiveThread(managerHandler, receiveActivityHandler, socket);
-                    thread.start();
                 }
                 if (msg.what == FINISH) {
                     try {
@@ -71,7 +73,7 @@ public class ReceiveManager extends Thread {
         if(serverSocket != null) {
             try {
                 socket = serverSocket.accept();
-                DataReceiveThread thread = new DataReceiveThread(managerHandler, receiveActivityHandler, socket);
+                DataReceiveThread thread = new DataReceiveThread();
                 thread.start();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -91,21 +93,7 @@ public class ReceiveManager extends Thread {
         super.destroy();
     }
 
-    static class DataReceiveThread extends Thread {
-
-        private long length;
-        private String fileName;
-
-        private Socket socket;
-        private ReceiveActivityHandler receiveActivityHandler;
-        private Handler managerHandler;
-
-
-        public DataReceiveThread(Handler managerHandler, ReceiveActivityHandler receiveActivityHandler, Socket socket) {
-            this.managerHandler = managerHandler;
-            this.receiveActivityHandler = receiveActivityHandler;
-            this.socket = socket;
-        }
+    class DataReceiveThread extends Thread {
 
         @Override
         public void run() {

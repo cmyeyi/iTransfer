@@ -22,13 +22,13 @@ import cn.edu.sdust.silence.itransfer.common.Constant;
  */
 public class ServerManager extends Thread {
 
-    private String filePath;
-    private ServerSocket serverSocket;
-    private Socket socket;
-
     public static int RETRY = 1;
     public static int FINISH = 2;
-
+    private ServerSocket serverSocket;
+    private Socket socket;
+    private String filePath;
+    private String fileName;
+    private long length;
     private Handler managerHandler;
     private SendActivityHandler sendActivityHandler;
 
@@ -55,7 +55,7 @@ public class ServerManager extends Thread {
                 if (msg.what == RETRY) {
                     try {
                         socket = serverSocket.accept();
-                        DateServerThread thread = new DateServerThread(sendActivityHandler, managerHandler, filePath, socket);
+                        DateServerThread thread = new DateServerThread();
                         thread.start();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -77,7 +77,7 @@ public class ServerManager extends Thread {
             try {
                 socket = serverSocket.accept();
                 if(socket != null) {
-                    DateServerThread thread = new DateServerThread(sendActivityHandler, managerHandler, filePath, socket);
+                    DateServerThread thread = new DateServerThread();
                     thread.start();
                     return;
                 }
@@ -100,24 +100,7 @@ public class ServerManager extends Thread {
     }
 
 
-    static class DateServerThread extends Thread {
-
-
-        private String fileName;
-        private long length;
-        private String filePath;
-        private Socket socket;
-
-        private Handler managerHandler;
-        private SendActivityHandler sendActivityHandler;
-
-        public DateServerThread(SendActivityHandler sendActivityHandler, Handler managerHandler, String filePath, Socket socket) {
-            this.sendActivityHandler = sendActivityHandler;
-            this.filePath = filePath;
-            this.socket = socket;
-            this.managerHandler = managerHandler;
-            Log.i("xyz", "dataServerThread start");
-        }
+    class DateServerThread extends Thread {
 
         @Override
         public void run() {
