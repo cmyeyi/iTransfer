@@ -110,7 +110,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
             @Override
             public void onConnectionInfoAvailable(WifiP2pInfo wifiInfo) {
                 showTransferLoading();
-                tv_point.setText("接收端，连接成功，准备接收数据");
+                tv_point.setText("连接成功，准备接收数据");
                 Log.i("#####", "接收端，#onConnectionInfoAvailable#");
                 Log.i("#####", "接收端，isOwner=" + wifiInfo.isGroupOwner);
                 Log.i("#####", "接收端，groupFormed:" + wifiInfo.groupFormed);
@@ -173,7 +173,12 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
             public void onFailure(int reason) {
                 isConnect = false;
                 Log.d("#####", "接收端, 创建连接 onFailure");
-//                createConnect(connectAddress);
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        createConnect(connectAddress);
+                    }
+                },1000);
             }
         });
     }
