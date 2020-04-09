@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void aboutDrawer() {
-        mDrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawer = findViewById(R.id.drawer_layout);
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawer, 0, 0);
         mDrawer.setDrawerListener(mDrawerToggle);
     }
@@ -204,12 +204,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void initView() {
-        sendBtn = (FloatingActionButton) findViewById(R.id.action_send);
+        sendBtn = findViewById(R.id.action_send);
         sendBtn.setIcon(R.drawable.send_icon);
-        receiveBtn = (FloatingActionButton) findViewById(R.id.action_receive);
+        receiveBtn = findViewById(R.id.action_receive);
         receiveBtn.setIcon(R.drawable.receive_icon);
-        actionMenu = (FloatingActionsMenu) findViewById(R.id.multiple_actions);
-        mViewPager = (MaterialViewPager) findViewById(R.id.materialViewPager);
+        actionMenu = findViewById(R.id.multiple_actions);
+        mViewPager = findViewById(R.id.materialViewPager);
     }
 
 

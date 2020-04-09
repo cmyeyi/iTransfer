@@ -99,9 +99,9 @@ public class TestRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.V
         if (list != null)
             num_items = list.length;
 
-        ImageView icon = (ImageView) holder.itemView.findViewById(R.id.row_image);
-        TextView topView = (TextView) holder.itemView.findViewById(R.id.top_view);
-        TextView bottomView = (TextView) holder.itemView.findViewById(R.id.bottom_view);
+        ImageView icon = holder.itemView.findViewById(R.id.row_image);
+        TextView topView = holder.itemView.findViewById(R.id.top_view);
+        TextView bottomView = holder.itemView.findViewById(R.id.bottom_view);
 
         if (mThumbnail == null)
             mThumbnail = new ThumbnailCreator(52, 52);
@@ -206,11 +206,11 @@ public class TestRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.V
         if (file.isFile()) {
             double size = file.length();
             if (size > GB)
-                display_size = String.format("%.2f Gb ", (double) size / GB);
+                display_size = String.format("%.2f Gb ", size / GB);
             else if (size < GB && size > MG)
-                display_size = String.format("%.2f Mb ", (double) size / MG);
+                display_size = String.format("%.2f Mb ", size / MG);
             else if (size < MG && size > KB)
-                display_size = String.format("%.2f Kb ", (double) size / KB);
+                display_size = String.format("%.2f Kb ", size / KB);
             else
                 display_size = String.format("%.2f bytes ", (double) size);
 

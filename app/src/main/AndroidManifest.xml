@@ -64,6 +64,7 @@
         <activity android:name=".activity.ChoseFileActivity" />
         <activity android:name=".activity.QRCodeActivity" />
         <activity android:name=".activity.CaptureActivity" />
+        <service android:name=".thread.receiver.ReceiveService"/>
 
 
     </application>

@@ -26,7 +26,7 @@ public class QRCodeActivity extends AppCompatActivity {
     }
 
     private void initView() {
-        qrcodeView = (ImageView) findViewById(R.id.id_qrcode_view);
+        qrcodeView = findViewById(R.id.id_qrcode_view);
 
         Bitmap bitmap = ZXingUtil.createQRCode(getAddress("ca:3d:dc:a3:7b:0e").toString(),QR_WIDTH,QR_WIDTH);
         qrcodeView.setImageBitmap(bitmap);

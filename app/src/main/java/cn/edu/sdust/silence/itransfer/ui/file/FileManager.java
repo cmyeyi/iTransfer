@@ -552,12 +552,12 @@ public class FileManager {
 //                    }
                     String path = mPathStack.peek();
                     for (Object a : tt) {
-                        if (new File(path + "/" + (String) a).isDirectory())
+                        if (new File(path + "/" + a).isDirectory())
                             mDirContent.add((String) a);
                     }
 
                     for (Object a : tt) {
-                        if (new File(path + "/" + (String) a).isFile())
+                        if (new File(path + "/" + a).isFile())
                             mDirContent.add((String) a);
                     }
 
@@ -572,7 +572,7 @@ public class FileManager {
 
                     mDirContent.clear();
                     for (Object a : size_ar) {
-                        if (new File(dir + "/" + (String) a).isDirectory())
+                        if (new File(dir + "/" + a).isDirectory())
                             mDirContent.add(index++, (String) a);
                         else
                             mDirContent.add((String) a);
@@ -588,7 +588,7 @@ public class FileManager {
                     mDirContent.clear();
 
                     for (Object a : type_ar) {
-                        if (new File(current + "/" + (String) a).isDirectory())
+                        if (new File(current + "/" + a).isDirectory())
                             mDirContent.add(dirindex++, (String) a);
                         else
                             mDirContent.add((String) a);

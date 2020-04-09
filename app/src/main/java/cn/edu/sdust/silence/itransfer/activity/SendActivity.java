@@ -13,7 +13,9 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
@@ -24,6 +26,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -36,7 +39,8 @@ import cn.edu.sdust.silence.itransfer.R;
 import cn.edu.sdust.silence.itransfer.qrcode.utils.ZXingUtil;
 import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
-import cn.edu.sdust.silence.itransfer.thread.server.SendActivityHandler;
+import cn.edu.sdust.silence.itransfer.thread.receiver.OnTransferListener;
+import cn.edu.sdust.silence.itransfer.thread.server.SendTask;
 import cn.edu.sdust.silence.itransfer.thread.server.ServerManager;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
@@ -58,7 +62,6 @@ public class SendActivity extends Activity implements DirectActionListener {
     private WifiP2pManager.Channel mChannel;
     private String filePath;
     private boolean isConnectClient = false;
-    private SendActivityHandler sendActivityHandler;
     private ImageView qrcodeView;
 
     //设备列表
@@ -108,6 +111,33 @@ public class SendActivity extends Activity implements DirectActionListener {
         mFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
     }
 
+    OnTransferListener mOnProgressChangListener = new OnTransferListener() {
+        @Override
+        public void onError() {
+            Toast.makeText(SendActivity.this, "数据接收失败", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
+        @Override
+        public void onTransferFinished(File file) {
+            finish();
+        }
+
+        @Override
+        public void onProgressChanged(int progressValue) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    layout_point_container.setVisibility(View.GONE);
+                    if (progress.getVisibility() != View.VISIBLE) {
+                        progress.setVisibility(View.VISIBLE);
+                    }
+                    progress.setProgress(progressValue);
+                }
+            });
+        }
+    };
+
     private void initWifiP2p() {
         mWifiP2pManager = (WifiP2pManager) getSystemService(WIFI_P2P_SERVICE);
         mChannel = mWifiP2pManager.initialize(this, Looper.myLooper(), new WifiP2pManager.ChannelListener() {
@@ -151,6 +181,8 @@ public class SendActivity extends Activity implements DirectActionListener {
                         serverManager = new ServerManager(sendActivityHandler, wifiInfo.groupOwnerAddress.getHostAddress(), filePath);
                     }
                     serverManager.start();
+
+//                    startSend(wifiInfo);
                     isConnectClient = true;
                 } else {
                     //TODO
@@ -160,6 +192,20 @@ public class SendActivity extends Activity implements DirectActionListener {
             }
         };
         mReceiver = new WifiP2PBroadcastReceiver(mWifiP2pManager, mChannel, this, mPeerListListener, mInfoListener, this);
+    }
+
+    private void startSend(WifiP2pInfo wifiInfo) {
+        if (TextUtils.isEmpty(filePath) && wifiInfo != null) {
+            SendTask sendTask = null;
+            sendTask.setOnTransferListener(mOnProgressChangListener);
+            if (wifiInfo.isGroupOwner) {
+                sendTask = new SendTask(true, null, filePath);
+            } else {
+                String ip = wifiInfo.groupOwnerAddress.getHostAddress();
+                sendTask = new SendTask(true, ip, filePath);
+            }
+            sendTask.execute();
+        }
     }
 
 //    private void createConnect(String address) {
@@ -191,15 +237,15 @@ public class SendActivity extends Activity implements DirectActionListener {
 
     private void initView() {
         qrcodeView = findViewById(R.id.id_qrcode_view);
-        progress = (NumberProgressBar) findViewById(R.id.progress);
+        progress = findViewById(R.id.progress);
         progress.setProgressTextColor(Color.WHITE);
         progress.setReachedBarColor(Color.WHITE);
         progress.setUnreachedBarColor(Color.GRAY);
         progress.setProgressTextSize(40f);
-        loading = (RotateLoading) findViewById(R.id.loading);
-        tv_point = (TextView) findViewById(R.id.tv_point);
+        loading = findViewById(R.id.loading);
+        tv_point = findViewById(R.id.tv_point);
         layout_point_container = findViewById(R.id.layout_point_container);
-        back = (ImageButton) findViewById(R.id.back);
+        back = findViewById(R.id.back);
 
         back.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -223,7 +269,7 @@ public class SendActivity extends Activity implements DirectActionListener {
                 builder.show();
             }
         });
-        sendActivityHandler = new SendActivityHandler(SendActivity.this);
+//        sendActivityHandler = new SendActivityHandler(SendActivity.this);
         layout_point_container.setVisibility(View.VISIBLE);
         loading.setLoadingColor(Color.WHITE);
         loading.start();
@@ -276,16 +322,26 @@ public class SendActivity extends Activity implements DirectActionListener {
         return super.onKeyDown(keyCode, event);
     }
 
+
+    Handler sendActivityHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message message) {
+            if(message.what == SendActivity.PROGRESS){
+                freshProgress(message.arg1);
+            }
+            return true;
+        }
+    });
+
     /**
      * 更新进度
-     *
-     * @param p
+     * @param value
      */
-    public void freshProgress(int p) {
+    public void freshProgress(int value) {
         layout_point_container.setVisibility(View.GONE);
         progress.setVisibility(View.VISIBLE);
-        progress.setProgress(p);
-        if (p >= 100) {
+        progress.setProgress(value);
+        if (value >= 100) {
             Toast.makeText(this, "文件发送成功", Toast.LENGTH_LONG).show();
             finish();
         }
@@ -328,7 +384,7 @@ public class SendActivity extends Activity implements DirectActionListener {
         this.deviceSelf = wifiP2pDevice;
         Log.i("#####", "发送端 自己的Name:" + deviceSelf.deviceName);
         Log.i("#####", "发送端 自己的Address:" + deviceSelf.deviceAddress);
-        if(macAddress == null) {
+        if (macAddress == null) {
             macAddress = deviceSelf.deviceAddress;
             Bitmap bitmap = ZXingUtil.createQRCode(macAddress, 150, 150);
             qrcodeView.setImageBitmap(bitmap);
@@ -339,7 +395,7 @@ public class SendActivity extends Activity implements DirectActionListener {
         try {
             macAddress = macAddress();
             Log.i("#####", "发送端 macAddress1:" + macAddress);
-            if(!TextUtils.isEmpty(macAddress)) {
+            if (!TextUtils.isEmpty(macAddress)) {
                 Bitmap bitmap = ZXingUtil.createQRCode(macAddress, 150, 150);
                 qrcodeView.setImageBitmap(bitmap);
             }
@@ -358,7 +414,7 @@ public class SendActivity extends Activity implements DirectActionListener {
         String address = null;
         // 把当前机器上的访问网络接口的存入 Enumeration集合中
         Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-        Log.d("TEST_BUG", " interfaceName = " + interfaces );
+        Log.d("TEST_BUG", " interfaceName = " + interfaces);
         while (interfaces.hasMoreElements()) {
             NetworkInterface netWork = interfaces.nextElement();
             // 如果存在硬件地址并可以使用给定的当前权限访问，则返回该硬件地址（通常是 MAC）。
@@ -374,9 +430,9 @@ public class SendActivity extends Activity implements DirectActionListener {
                 builder.deleteCharAt(builder.length() - 1);
             }
             String mac = builder.toString();
-            Log.d("TEST_BUG", "interfaceName="+netWork.getName()+", mac="+mac);
+            Log.d("TEST_BUG", "interfaceName=" + netWork.getName() + ", mac=" + mac);
             if (netWork.getName().equals("p2p0")) {
-                Log.e("TEST_BUG", " interfaceName ="+netWork.getName()+", mac="+mac);
+                Log.e("TEST_BUG", " interfaceName =" + netWork.getName() + ", mac=" + mac);
                 address = mac.toLowerCase();
             }
         }

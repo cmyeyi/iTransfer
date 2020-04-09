@@ -1,8 +1,11 @@
 package cn.edu.sdust.silence.itransfer.activity;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -11,6 +14,8 @@ import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -20,14 +25,15 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 import cn.edu.sdust.silence.itransfer.R;
-import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveActivityHandler;
+import cn.edu.sdust.silence.itransfer.thread.receiver.OnTransferListener;
 import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
-import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveManager;
+import cn.edu.sdust.silence.itransfer.thread.receiver.ReceiveService;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
 
@@ -44,7 +50,6 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
     //this is a flag about connection
     private boolean isConnect = false;
     private boolean isConnectServer = false;
-    private ReceiveActivityHandler handler;
 
     //设备列表
     private List<WifiP2pDevice> peers = new ArrayList();
@@ -56,6 +61,70 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
     private View layout_point_container;
     private WifiP2pDevice deviceSelf;
     private String connectAddress;
+    private ReceiveService mReceiveService;
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            ReceiveService.MyBinder binder = (ReceiveService.MyBinder) service;
+            mReceiveService = binder.getService();
+            mReceiveService.setOnTransferListener(mOnProgressChangListener);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            mReceiveService = null;
+            bindService();
+        }
+    };
+
+    OnTransferListener mOnProgressChangListener = new OnTransferListener() {
+        @Override
+        public void onError() {
+            Toast.makeText(ReceiveActivity.this, "数据接收失败", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+
+        @Override
+        public void onTransferFinished(File file) {
+            finish();
+        }
+
+        @Override
+        public void onProgressChanged(int progressValue) {
+            refreshProcess(progressValue);
+        }
+    };
+
+    /**
+     * 设置进度
+     * @param progressValue
+     */
+    public void refreshProcess(int progressValue) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                layout_point_container.setVisibility(View.GONE);
+                if (progress.getVisibility() != View.VISIBLE) {
+                    progress.setVisibility(View.VISIBLE);
+                }
+                progress.setProgress(progressValue);
+            }
+        });
+    }
+
+    private void bindService() {
+        Intent intent = new Intent(ReceiveActivity.this, ReceiveService.class);
+        bindService(intent, serviceConnection, BIND_AUTO_CREATE);
+    }
+
+    private void unBindService() {
+        if (mReceiveService != null) {
+            mReceiveService.setOnTransferListener(null);
+            unbindService(serviceConnection);
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,11 +135,12 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
         initWifiP2p();
         discoverPeers();
         createConnect(connectAddress);
+        bindService();
     }
 
     private void getConnectAddress() {
         connectAddress = getIntent().getStringExtra("address");
-        Log.d("#####","接收端，扫码获取："+ connectAddress);
+        Log.d("#####", "接收端，扫码获取connectAddress：" + connectAddress);
     }
 
     private void initIntentFilter() {
@@ -84,11 +154,11 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
     private void initWifiP2p() {
         mManager = (WifiP2pManager) getSystemService(WIFI_P2P_SERVICE);
-        mChannel = mManager.initialize(this, Looper.myLooper(), new WifiP2pManager.ChannelListener(){
+        mChannel = mManager.initialize(this, Looper.myLooper(), new WifiP2pManager.ChannelListener() {
 
             @Override
             public void onChannelDisconnected() {
-                Log.e("#####","接收端，#onChannelDisconnected#");
+                Log.e("#####", "接收端，#onChannelDisconnected#");
             }
         });
 
@@ -99,7 +169,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
                 peers.addAll(peerList.getDeviceList());
                 for (int i = 0; i < peers.size(); i++) {
                     WifiP2pDevice d = peers.get(i);
-                    Log.e("#####","onPeersAvailable deviceAddress:"+d.deviceAddress);
+                    Log.e("#####", "onPeersAvailable deviceAddress:" + d.deviceAddress);
 //                    createConnect(connectAddress);
                 }
             }
@@ -114,23 +184,31 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
                 Log.i("#####", "接收端，isOwner=" + wifiInfo.isGroupOwner);
                 Log.i("#####", "接收端，groupFormed:" + wifiInfo.groupFormed);
                 Log.i("#####", "接收端，isConnectServer:" + isConnectServer);
-                if (wifiInfo.groupFormed && !isConnectServer) {
-                    ReceiveManager manager = null;
-                    if (wifiInfo.isGroupOwner) {
-                        manager = new ReceiveManager(handler,null);
-                    } else {
-                        manager = new ReceiveManager(handler, wifiInfo.groupOwnerAddress.getHostAddress());
-                    }
-                    manager.start();
-                    isConnectServer = true;
-                } else {
-                    //TODO
-                    Log.w("#####", "接收端，groupFormed false");
-                }
+                startReceiveService(wifiInfo);
             }
         };
 
         mReceiver = new WifiP2PBroadcastReceiver(mManager, mChannel, this, mPeerListListener, cInfo, this);
+    }
+
+    private void startReceiveService(WifiP2pInfo wifiInfo) {
+        if (wifiInfo.groupFormed && !isConnectServer) {
+            if (wifiInfo.isGroupOwner) {
+                startReceiveService(true, null);
+            } else {
+                startReceiveService(false, wifiInfo.groupOwnerAddress.getHostAddress());
+            }
+            isConnectServer = true;
+        }
+    }
+
+    private void startReceiveService(boolean isGroupOwner, String p2pMac) {
+        if (mReceiveService != null) {
+            Intent intent = new Intent(ReceiveActivity.this, ReceiveService.class);
+            intent.putExtra(ReceiveService.IS_GROUPOWNER, isGroupOwner);
+            intent.putExtra(ReceiveService.P2P_MAC, p2pMac);
+            startService(intent);
+        }
     }
 
     private void disconnect() {
@@ -149,7 +227,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
     private void createConnect(String address) {
         Log.e("#####", "#####createConnect#####");
-        if(isConnect) {
+        if (isConnect) {
             Log.e("#####", "已经创建过连接，本次连接无效");
             return;
         }
@@ -165,33 +243,38 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
             public void onSuccess() {
                 isConnect = true;
                 tv_point.setText("连接成功，正在接收数据");
-                Log.d("#####", "接收端,创建连接 onSuccess");
+                Log.d("#####", "接收端,连接成功");
             }
 
             @Override
             public void onFailure(int reason) {
                 isConnect = false;
-                Log.d("#####", "接收端, 创建连接 onFailure");
-                handler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        createConnect(connectAddress);
-                    }
-                },1000);
+                Log.d("#####", "接收端, 连接失败");
+                reconnect();
             }
         });
     }
 
+    private void reconnect() {
+        Log.d("#####", "reconnect");
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                createConnect(connectAddress);
+            }
+        },1000);
+    }
+
     private void initView() {
         findViewById(R.id.id_qrcode_view).setVisibility(View.GONE);
-        progress = (NumberProgressBar) findViewById(R.id.progress);
+        progress = findViewById(R.id.progress);
         progress.setProgressTextColor(Color.WHITE);
         progress.setReachedBarColor(Color.WHITE);
         progress.setUnreachedBarColor(Color.GRAY);
         progress.setProgressTextSize(40f);
 
-        loading = (RotateLoading) findViewById(R.id.loading);
-        tv_point = (TextView) findViewById(R.id.tv_point);
+        loading = findViewById(R.id.loading);
+        tv_point = findViewById(R.id.tv_point);
         layout_point_container = findViewById(R.id.layout_point_container);
 
         loading.setLoadingColor(Color.WHITE);
@@ -220,8 +303,6 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
                 builder.show();
             }
         });
-
-        handler = new ReceiveActivityHandler(ReceiveActivity.this);
     }
 
     private void showTransferLoading() {
@@ -258,26 +339,10 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
     @Override
     protected void onDestroy() {
+        unBindService();
         disconnect();
         super.onDestroy();
     }
-
-
-    /**
-     * 设置进度
-     *
-     * @param p
-     */
-    public void refreshProcess(int p) {
-        layout_point_container.setVisibility(View.GONE);
-        progress.setVisibility(View.VISIBLE);
-        progress.setProgress(p);
-        if (p >= 100) {
-            Toast.makeText(this,"文件接收成功",Toast.LENGTH_LONG).show();
-            finish();
-        }
-    }
-
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -312,7 +377,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
     @Override
     public void onReconnect() {
-        Log.i("#####", "接收端，开始重新连接");
-        createConnect(connectAddress);
+        Log.i("#####", "接收端，请求重新连接");
+        reconnect();
     }
 }

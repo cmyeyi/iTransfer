@@ -86,10 +86,10 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
         });
 
         TYPE_INTENT = getIntent().getIntExtra("type", 0);
-        scanPreview = (SurfaceView) findViewById(R.id.capture_preview);
-        scanContainer = (RelativeLayout) findViewById(R.id.capture_container);
-        scanCropView = (RelativeLayout) findViewById(R.id.capture_crop_view);
-        scanLine = (ImageView) findViewById(R.id.capture_scan_line);
+        scanPreview = findViewById(R.id.capture_preview);
+        scanContainer = findViewById(R.id.capture_container);
+        scanCropView = findViewById(R.id.capture_crop_view);
+        scanLine = findViewById(R.id.capture_scan_line);
 
         inactivityTimer = new InactivityTimer(this);
 

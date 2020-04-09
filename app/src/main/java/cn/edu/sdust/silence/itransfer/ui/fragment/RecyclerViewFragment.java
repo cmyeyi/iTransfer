@@ -87,7 +87,7 @@ public class RecyclerViewFragment extends Fragment {
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.recyclerView);
+        mRecyclerView = view.findViewById(R.id.recyclerView);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true);
@@ -315,11 +315,11 @@ public class RecyclerViewFragment extends Fragment {
                             double size = file.length();
                             String display_size = "";
                             if (size > GB)
-                                display_size = String.format("%.2f Gb ", (double) size / GB);
+                                display_size = String.format("%.2f Gb ", size / GB);
                             else if (size < GB && size > MG)
-                                display_size = String.format("%.2f Mb ", (double) size / MG);
+                                display_size = String.format("%.2f Mb ", size / MG);
                             else if (size < MG && size > KB)
-                                display_size = String.format("%.2f Kb ", (double) size / KB);
+                                display_size = String.format("%.2f Kb ", size / KB);
                             else
                                 display_size = String.format("%.2f bytes ", (double) size);
 
@@ -338,7 +338,7 @@ public class RecyclerViewFragment extends Fragment {
                             builder.setTitle("正在对 " + item + "重命名");
                             LayoutInflater inflater = LayoutInflater.from(getContext());
                             View view = inflater.inflate(R.layout.dialog_rename_file, null);
-                            final AppCompatEditText newName = (AppCompatEditText) view.findViewById(R.id.newName);
+                            final AppCompatEditText newName = view.findViewById(R.id.newName);
                             builder.setView(view);
                             builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
                                 @Override
