@@ -40,7 +40,6 @@ import cn.edu.sdust.silence.itransfer.qrcode.utils.ZXingUtil;
 import cn.edu.sdust.silence.itransfer.reciever.DirectActionListener;
 import cn.edu.sdust.silence.itransfer.reciever.WifiP2PBroadcastReceiver;
 import cn.edu.sdust.silence.itransfer.thread.receiver.OnTransferListener;
-import cn.edu.sdust.silence.itransfer.thread.server.SendTask;
 import cn.edu.sdust.silence.itransfer.thread.server.ServerManager;
 import cn.edu.sdust.silence.itransfer.ui.loading.RotateLoading;
 import cn.edu.sdust.silence.itransfer.ui.progress.NumberProgressBar;
@@ -181,8 +180,6 @@ public class SendActivity extends Activity implements DirectActionListener {
                         serverManager = new ServerManager(sendActivityHandler, wifiInfo.groupOwnerAddress.getHostAddress(), filePath);
                     }
                     serverManager.start();
-
-//                    startSend(wifiInfo);
                     isConnectClient = true;
                 } else {
                     //TODO
@@ -192,20 +189,6 @@ public class SendActivity extends Activity implements DirectActionListener {
             }
         };
         mReceiver = new WifiP2PBroadcastReceiver(mWifiP2pManager, mChannel, this, mPeerListListener, mInfoListener, this);
-    }
-
-    private void startSend(WifiP2pInfo wifiInfo) {
-        if (TextUtils.isEmpty(filePath) && wifiInfo != null) {
-            SendTask sendTask = null;
-            sendTask.setOnTransferListener(mOnProgressChangListener);
-            if (wifiInfo.isGroupOwner) {
-                sendTask = new SendTask(true, null, filePath);
-            } else {
-                String ip = wifiInfo.groupOwnerAddress.getHostAddress();
-                sendTask = new SendTask(true, ip, filePath);
-            }
-            sendTask.execute();
-        }
     }
 
 //    private void createConnect(String address) {
@@ -269,7 +252,6 @@ public class SendActivity extends Activity implements DirectActionListener {
                 builder.show();
             }
         });
-//        sendActivityHandler = new SendActivityHandler(SendActivity.this);
         layout_point_container.setVisibility(View.VISIBLE);
         loading.setLoadingColor(Color.WHITE);
         loading.start();

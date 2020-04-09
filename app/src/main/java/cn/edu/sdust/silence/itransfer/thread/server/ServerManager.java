@@ -16,7 +16,6 @@ import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.activity.SendActivity;
 import cn.edu.sdust.silence.itransfer.common.Constant;
-import cn.edu.sdust.silence.itransfer.thread.receiver.OnTransferListener;
 
 /**
  * 发送文件子线程管理线程
@@ -29,10 +28,10 @@ public class ServerManager extends Thread {
     private String filePath;
     private String fileName;
     private Handler managerHandler;
-    private Handler sendActivityHandler;
+    private Handler handler;
 
-    public ServerManager(Handler sendActivityHandler, String ip, String filePath) {
-        this.sendActivityHandler = sendActivityHandler;
+    public ServerManager(Handler h, String ip, String filePath) {
+        this.handler = h;
         this.filePath = filePath;
         if (!TextUtils.isEmpty(ip)) {
             this.ip = ip;
@@ -193,7 +192,7 @@ public class ServerManager extends Thread {
             Message msg = new Message();
             msg.what = SendActivity.PROGRESS;
             msg.arg1 = progress;
-            sendActivityHandler.sendMessage(msg);
+            handler.sendMessage(msg);
         }
     }
 }
