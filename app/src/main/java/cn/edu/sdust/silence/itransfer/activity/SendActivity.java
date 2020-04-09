@@ -167,7 +167,7 @@ public class SendActivity extends Activity implements DirectActionListener {
             public void onConnectionInfoAvailable(WifiP2pInfo wifiInfo) {
                 mWifiInfo = wifiInfo;
                 showTransferLoading();
-                tv_point.setText("连接成功，准备发送数据");
+                tv_point.setText("开始接收数据");
                 Log.i("#####", "发送端，#onConnectionInfoAvailable#" + "，isOwner=" + wifiInfo.isGroupOwner + ",isConnectClient=" + isConnectClient);
                 Log.i("#####", "发送端，groupFormed：" + wifiInfo.groupFormed);
                 Log.i("#####", "发送端 isConnectClient:" + isConnectClient);

@@ -179,7 +179,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
             @Override
             public void onConnectionInfoAvailable(WifiP2pInfo wifiInfo) {
                 showTransferLoading();
-                tv_point.setText("连接成功，准备接收数据");
+                tv_point.setText("开始接收数据");
                 Log.i("#####", "接收端，#onConnectionInfoAvailable#");
                 Log.i("#####", "接收端，isOwner=" + wifiInfo.isGroupOwner);
                 Log.i("#####", "接收端，groupFormed:" + wifiInfo.groupFormed);
@@ -236,13 +236,13 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
         config.deviceAddress = address;
         config.groupOwnerIntent = 15;
         config.wps.setup = WpsInfo.PBC;
-
+        tv_point.setText("连接中... ...");
         mManager.connect(mChannel, config, new WifiP2pManager.ActionListener() {
 
             @Override
             public void onSuccess() {
                 isConnect = true;
-                tv_point.setText("连接成功，正在接收数据");
+                tv_point.setText("连接成功");
                 Log.d("#####", "接收端,连接成功");
             }
 
