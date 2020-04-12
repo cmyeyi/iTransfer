@@ -4,6 +4,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,6 +17,8 @@ import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.activity.SendActivity;
 import cn.edu.sdust.silence.itransfer.common.Constant;
+
+import static cn.edu.sdust.silence.itransfer.common.Constant.TIMEOUT;
 
 /**
  * 发送文件子线程管理线程
@@ -52,9 +55,11 @@ public class ServerManager extends Thread {
             public void handleMessage(Message msg) {
 
                 if (msg.what == Constant.RETRY) {
+                    Log.w("#####","Server RETRY");
                     startServerThread();
                 }
                 if (msg.what == Constant.FINISH) {
+                    Log.w("#####","Server FINISH");
                     closeServerThread();
                     managerHandler.getLooper().quit();
                     Thread.interrupted();
@@ -67,6 +72,7 @@ public class ServerManager extends Thread {
     }
 
     private void closeServerThread() {
+        Log.w("#####","Server closeServerThread");
         if(serverSocket != null) {
             try {
                 serverSocket.close();
@@ -77,25 +83,31 @@ public class ServerManager extends Thread {
     }
 
     private void startServerThread() {
+        Log.w("#####","Server startServerThread");
         DataServerThread thread = new DataServerThread();
         if (serverSocket != null) {
             try {
                 socket = serverSocket.accept();
                 if (socket != null) {
+                    Log.w("#####","Server startServerThread 1");
                     thread.start();
                 } else {
+                    Log.w("#####","Server startServerThread 1 socket = null");
                     thread.sendErrorMessage();
                 }
             } catch (IOException e) {
+                Log.w("#####","Server startServerThread 1 IOException");
                 thread.sendErrorMessage();
                 e.printStackTrace();
             }
         } else {
+            Log.w("#####","Server startServerThread 2");
             try {
                 socket = new Socket();
-                socket.connect((new InetSocketAddress(ip, Constant.PORT)),30000);
+                socket.connect((new InetSocketAddress(ip, Constant.PORT)),TIMEOUT);
                 thread.start();
             } catch (IOException e) {
+                Log.w("#####","Server startServerThread 2 IOException");
                 thread.sendErrorMessage();
                 e.printStackTrace();
             }

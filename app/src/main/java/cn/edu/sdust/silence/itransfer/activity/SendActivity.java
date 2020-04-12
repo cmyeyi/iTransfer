@@ -2,12 +2,14 @@ package cn.edu.sdust.silence.itransfer.activity;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
 import android.net.wifi.p2p.WifiP2pInfo;
@@ -167,7 +169,7 @@ public class SendActivity extends Activity implements DirectActionListener {
             public void onConnectionInfoAvailable(WifiP2pInfo wifiInfo) {
                 mWifiInfo = wifiInfo;
                 showTransferLoading();
-                tv_point.setText("开始接收数据");
+                tv_point.setText("开始发送数据");
                 Log.i("#####", "发送端，#onConnectionInfoAvailable#" + "，isOwner=" + wifiInfo.isGroupOwner + ",isConnectClient=" + isConnectClient);
                 Log.i("#####", "发送端，groupFormed：" + wifiInfo.groupFormed);
                 Log.i("#####", "发送端 isConnectClient:" + isConnectClient);
@@ -270,10 +272,13 @@ public class SendActivity extends Activity implements DirectActionListener {
         mWifiP2pManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
+                Log.e("#####", "发送端 discoverPeers，onSuccess");
             }
 
             @Override
             public void onFailure(int reason) {
+                Log.e("#####", "发送端 discoverPeers，onFailure,reason="+reason);
+                discoverPeers();
             }
         });
     }
@@ -337,6 +342,7 @@ public class SendActivity extends Activity implements DirectActionListener {
 
     @Override
     protected void onResume() {
+        checkWifiState();
         registerReceiver(mReceiver, mFilter);
         super.onResume();
     }
@@ -388,8 +394,8 @@ public class SendActivity extends Activity implements DirectActionListener {
 
 
     @Override
-    public void onReconnect() {
-        Log.i("#####", "#####从新开始连接#####");
+    public void connectError() {
+        Log.i("#####", "#####接收端 连接异常，断开连接#####");
     }
 
     public static String macAddress() throws SocketException {
@@ -419,6 +425,16 @@ public class SendActivity extends Activity implements DirectActionListener {
             }
         }
         return address;
+    }
+
+    private void checkWifiState() {
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if(wifiManager.isWifiEnabled()) {
+            Log.i("#####", "发送端，isWifiEnabled:yes");
+        } else {
+            Log.i("#####", "发送端，isWifiEnabled: no");
+        }
+        wifiManager.setWifiEnabled(true);
     }
 
 }

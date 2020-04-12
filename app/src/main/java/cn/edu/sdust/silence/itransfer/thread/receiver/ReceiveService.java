@@ -20,6 +20,8 @@ import java.net.Socket;
 
 import cn.edu.sdust.silence.itransfer.common.Constant;
 
+import static cn.edu.sdust.silence.itransfer.common.Constant.TIMEOUT;
+
 /**
  * @Description: <p>
  * <p>
@@ -101,7 +103,7 @@ public class ReceiveService extends IntentService {
         } else {
             try {
                 socket = new Socket();
-                socket.connect((new InetSocketAddress(ip, Constant.PORT)), 30000);
+                socket.connect((new InetSocketAddress(ip, Constant.PORT)), TIMEOUT);
             } catch (IOException e) {
                 e.printStackTrace();
             }

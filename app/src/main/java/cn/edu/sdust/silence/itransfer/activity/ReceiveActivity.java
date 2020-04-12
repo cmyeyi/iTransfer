@@ -2,11 +2,13 @@ package cn.edu.sdust.silence.itransfer.activity;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Color;
+import android.net.wifi.WifiManager;
 import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
@@ -98,6 +100,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
     /**
      * 设置进度
+     *
      * @param progressValue
      */
     public void refreshProcess(int progressValue) {
@@ -212,21 +215,39 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
     }
 
     private void disconnect() {
-        mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                Log.e("#####", "removeGroup，onSuccess");
-            }
+        if(mManager !=  null) {
+            mManager.cancelConnect(mChannel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    Log.e("#####", "cancelConnect，onSuccess");
+                }
 
-            @Override
-            public void onFailure(int i) {
-                Log.e("#####", "removeGroup，onFailure");
-            }
-        });
+                @Override
+                public void onFailure(int i) {
+                    Log.e("#####", "cancelConnect，onFailure");
+                }
+            });
+            mManager.removeGroup(mChannel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    Log.e("#####", "removeGroup，onSuccess");
+                }
+
+                @Override
+                public void onFailure(int i) {
+                    Log.e("#####", "removeGroup，onFailure");
+                }
+            });
+            mManager = null;
+        }
     }
 
     private void createConnect(String address) {
         Log.e("#####", "#####createConnect#####");
+        if (mManager == null) {
+            Log.e("#####", "已经退出接收页面");
+            return;
+        }
         if (isConnect) {
             Log.e("#####", "已经创建过连接，本次连接无效");
             return;
@@ -257,12 +278,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
     private void reconnect() {
         Log.d("#####", "reconnect");
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                createConnect(connectAddress);
-            }
-        },1000);
+        createConnect(connectAddress);
     }
 
     private void initView() {
@@ -316,10 +332,13 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
         mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
+                Log.e("#####", "接收端 discoverPeers，onSuccess");
             }
 
             @Override
             public void onFailure(int reason) {
+                Log.e("#####", "接收端 discoverPeers，onFailure,reason=" + reason);
+                discoverPeers();
             }
         });
     }
@@ -327,6 +346,7 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
     @Override
     protected void onResume() {
         super.onResume();
+        discoverPeers();
         registerReceiver(mReceiver, mFilter);
         showTransferLoading();
     }
@@ -339,8 +359,8 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
 
     @Override
     protected void onDestroy() {
-        unBindService();
         disconnect();
+        unBindService();
         super.onDestroy();
     }
 
@@ -376,8 +396,19 @@ public class ReceiveActivity extends AppCompatActivity implements DirectActionLi
     }
 
     @Override
-    public void onReconnect() {
-        Log.i("#####", "接收端，请求重新连接");
-        reconnect();
+    public void connectError() {
+        Log.i("#####", "接收端，连接异常，请检查网络###############################");
+        checkWifiState();
+    }
+
+
+    private void checkWifiState() {
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        if(wifiManager.isWifiEnabled()) {
+            Log.i("#####", "接收端，isWifiEnabled:yes");
+        } else {
+            Log.i("#####", "接收端，isWifiEnabled: no");
+        }
+        wifiManager.setWifiEnabled(true);
     }
 }
